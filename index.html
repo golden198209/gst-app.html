@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-Company POS & Tax Invoice App</title>
-    <!-- html2pdf Library for Direct PDF Download & Sharing -->
+    <!-- html2pdf Library for Direct PDF Generation & Sharing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {
@@ -144,8 +144,8 @@
         .btn-success:hover { background-color: #218838; }
         .btn-pdf { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         .btn-pdf:hover { background-color: #c82333; }
-        .btn-whatsapp { background-color: #25D366; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
-        .btn-whatsapp:hover { background-color: #1ebe5d; }
+        .btn-share { background-color: #25D366; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-share:hover { background-color: #1ebe5d; }
         .btn-danger { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;}
         .btn-danger:hover { background-color: #bd2130; }
         .settings-bar {
@@ -301,12 +301,12 @@
             </div>
         </div>
 
-        <!-- Action Buttons Outside Box for Easy PDF Generation -->
+        <!-- Action Buttons with Direct Share Option -->
         <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-            <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 2;">Save & Print Invoice</button>
+            <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 2;">Save & Print</button>
             <button class="btn-pdf" onclick="downloadInvoicePDF()" style="flex: 1;">📥 Download PDF</button>
-            <button class="btn-whatsapp" onclick="shareOnWhatsApp()" style="flex: 1;">💬 Quick Text Share</button>
-            <button class="btn" onclick="resetInvoiceForm()" style="flex: 1; background-color: #6c757d;">Clear Form</button>
+            <button class="btn-share" onclick="sharePDFDirectly()" style="flex: 1.5;">📤 Share PDF via WhatsApp</button>
+            <button class="btn" onclick="resetInvoiceForm()" style="flex: 1; background-color: #6c757d;">Clear</button>
         </div>
     </div>
 
@@ -784,7 +784,6 @@
         window.print();
     }
 
-    // Function to download the actual printable invoice box as a PDF file
     function downloadInvoicePDF() {
         let element = document.getElementById('printableInvoiceArea');
         let invNo = document.getElementById('invNumber').value.replace(/\//g, '_');
@@ -795,54 +794,45 @@
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-        
-        html2pdf().from(element).set(opt).save().then(() => {
-            alert("PDF downloaded successfully! Now you can share this PDF file directly on WhatsApp.");
-        });
+        html2pdf().from(element).set(opt).save();
     }
 
-    function shareOnWhatsApp() {
-        let invNo = document.getElementById('invNumber').value;
-        let invDate = document.getElementById('invDate').value;
-        let custIdx = document.getElementById('customerSelect').value;
-        let comp = getActiveCompany();
-        let custPhone = custIdx !== "" ? customers[custIdx].phone : "";
-        let custName = custIdx !== "" ? customers[custIdx].name : "Customer";
-        
-        let subTotal = document.getElementById('subTotal').innerText;
-        let cgst = document.getElementById('cgstTotal').innerText;
-        let sgst = document.getElementById('sgstTotal').innerText;
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        let payStatus = document.getElementById('payStatus').value;
+    // Direct Share PDF Feature (agar device/browser support karta hai)
+    async function sharePDFDirectly() {
+        let element = document.getElementById('printableInvoiceArea');
+        let invNo = document.getElementById('invNumber').value.replace(/\//g, '_');
+        let opt = {
+            margin:       5,
+            filename:     `Invoice_${invNo}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
 
-        let itemsText = "";
-        let rows = document.querySelectorAll('#itemRows tr');
-        rows.forEach((row, index) => {
-            let prodName = row.querySelector('.prod-name-input').value;
-            let qty = row.querySelector('.qty').value;
-            let rate = row.querySelector('.rate').value;
-            let total = row.querySelector('.row-total').innerText;
-            if(prodName) {
-                itemsText += `${index + 1}. *${prodName}* (Qty: ${qty} x ₹${rate}) = ₹${total}\n`;
+        if (navigator.share) {
+            try {
+                alert("Preparing PDF for direct sharing...");
+                let worker = html2pdf().from(element).set(opt);
+                let pdfBlob = await worker.outputPdf('blob');
+                let file = new File([pdfBlob], `Invoice_${invNo}.pdf`, { type: 'application/pdf' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        title: `Tax Invoice ${invNo}`,
+                        text: 'Here is your tax invoice PDF.',
+                        files: [file]
+                    });
+                } else {
+                    alert("Your browser does not support direct file sharing. Downloading PDF instead.");
+                    worker.save();
+                }
+            } catch (error) {
+                console.log("Sharing error:", error);
             }
-        });
-
-        let message = `*TAX INVOICE*\n*${comp.name}*\nGSTIN: ${comp.gstin}\n\n` +
-                      `*Invoice No:* ${invNo}\n` +
-                      `*Date:* ${invDate}\n` +
-                      `*Customer:* ${custName}\n\n` +
-                      `*Items Details:*\n${itemsText}\n` +
-                      `-------------------\n` +
-                      `*Taxable Amount:* ₹${subTotal}\n` +
-                      `*CGST (9%):* ₹${cgst}\n` +
-                      `*SGST (9%):* ₹${sgst}\n` +
-                      `*Grand Total:* ₹${grandTotal}\n` +
-                      `*Payment Status:* ${payStatus}\n\n` +
-                      `*Bank Details for Payment:*\nBank: ${comp.bankName}\nAcc No: ${comp.accNo}\nIFSC: ${comp.ifsc}\n\n` +
-                      `Thank you for your business!`;
-
-        let whatsappUrl = `https://api.whatsapp.com/send?phone=${custPhone}&text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+        } else {
+            alert("Direct sharing is not supported on this browser. Use 'Download PDF' instead.");
+            downloadInvoicePDF();
+        }
     }
 
     function renderInvoiceHistory() {
