@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-Company POS & Tax Invoice App</title>
+    <!-- html2pdf Library for Direct PDF Download & Sharing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -140,6 +142,8 @@
         .btn:hover { background-color: #0056b3; }
         .btn-success { background-color: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;}
         .btn-success:hover { background-color: #218838; }
+        .btn-pdf { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-pdf:hover { background-color: #c82333; }
         .btn-whatsapp { background-color: #25D366; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         .btn-whatsapp:hover { background-color: #1ebe5d; }
         .btn-danger { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;}
@@ -204,7 +208,7 @@
 
     <!-- 1. INVOICE PANEL -->
     <div id="invoicePanel" class="panel active">
-        <div class="invoice-box">
+        <div class="invoice-box" id="printableInvoiceArea">
             <table class="header-table">
                 <tr>
                     <td>
@@ -295,12 +299,14 @@
                     </ul>
                 </div>
             </div>
+        </div>
 
-            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-                <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 2;">Save Invoice & Print</button>
-                <button class="btn-whatsapp" onclick="shareOnWhatsApp()" style="flex: 1;">Share Full Bill on WhatsApp</button>
-                <button class="btn" onclick="resetInvoiceForm()" style="flex: 1; background-color: #6c757d;">Clear Form</button>
-            </div>
+        <!-- Action Buttons Outside Box for Easy PDF Generation -->
+        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
+            <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 2;">Save & Print Invoice</button>
+            <button class="btn-pdf" onclick="downloadInvoicePDF()" style="flex: 1;">📥 Download PDF</button>
+            <button class="btn-whatsapp" onclick="shareOnWhatsApp()" style="flex: 1;">💬 Quick Text Share</button>
+            <button class="btn" onclick="resetInvoiceForm()" style="flex: 1; background-color: #6c757d;">Clear Form</button>
         </div>
     </div>
 
@@ -775,8 +781,24 @@
 
         invoices.push(newInvoice);
         localStorage.setItem('gs_invoices', JSON.stringify(invoices));
-        alert("Invoice saved successfully!");
         window.print();
+    }
+
+    // Function to download the actual printable invoice box as a PDF file
+    function downloadInvoicePDF() {
+        let element = document.getElementById('printableInvoiceArea');
+        let invNo = document.getElementById('invNumber').value.replace(/\//g, '_');
+        let opt = {
+            margin:       5,
+            filename:     `Invoice_${invNo}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        html2pdf().from(element).set(opt).save().then(() => {
+            alert("PDF downloaded successfully! Now you can share this PDF file directly on WhatsApp.");
+        });
     }
 
     function shareOnWhatsApp() {
