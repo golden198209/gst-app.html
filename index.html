@@ -20,9 +20,10 @@
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         .tab-btn {
-            padding: 10px 20px;
+            padding: 10px 15px;
             background-color: #ddd;
             border: none;
             cursor: pointer;
@@ -103,11 +104,12 @@
             padding: 5px 10px;
             border: 1px solid #bbb;
         }
-        .input-field, select {
+        .input-field, select, textarea {
             width: 100%;
             box-sizing: border-box;
             padding: 5px;
             font-size: 12px;
+            margin-bottom: 5px;
         }
         .btn {
             background-color: #007bff;
@@ -135,7 +137,7 @@
             body { background-color: #fff; padding: 0; }
             .container, .invoice-box { box-shadow: none; border: none; padding: 0; max-width: 100%; }
             .tab-buttons, .no-print, .settings-bar { display: none; }
-            .input-field, select { border: none; background: transparent; appearance: none; }
+            .input-field, select, textarea { border: none; background: transparent; appearance: none; }
         }
     </style>
 </head>
@@ -145,6 +147,7 @@
     <!-- Navigation Tabs -->
     <div class="tab-buttons no-print">
         <button class="tab-btn active" onclick="switchTab('invoice', event)">Create Invoice</button>
+        <button class="tab-btn" onclick="switchTab('business', event)">Business Profile Setup</button>
         <button class="tab-btn" onclick="switchTab('customers', event)">Manage Customers</button>
         <button class="tab-btn" onclick="switchTab('inventory', event)">Item Stock Management</button>
     </div>
@@ -162,8 +165,8 @@
             <table class="header-table">
                 <tr>
                     <td>
-                        <div class="company-title">Golden Star Furniture and Interior</div>
-                        <div class="sub-text">
+                        <div class="company-title" id="lblCompanyName">Golden Star Furniture and Interior</div>
+                        <div class="sub-text" id="lblCompanyDetails">
                             X Change Road, Lalchowk, Srinagar, J&K - 190008<br>
                             <strong>GSTIN:</strong> 01EBWPS3295G1Z4
                         </div>
@@ -242,7 +245,7 @@
             </div>
 
             <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-                <div style="width: 48%; border: 1px solid #ccc; padding: 10px; font-size: 12px;">
+                <div style="width: 48%; border: 1px solid #ccc; padding: 10px; font-size: 12px;" id="lblBankDetails">
                     <strong>Bank Details:</strong><br>
                     J&K Bank | SSI Branch<br>
                     Acc Name: Golden Star Furniture and Interior<br>
@@ -261,30 +264,59 @@
         </div>
     </div>
 
-    <!-- 2. CUSTOMER PANEL -->
+    <!-- 2. BUSINESS PROFILE SETUP -->
+    <div id="businessPanel" class="panel">
+        <h3>Business / Shop Profile Setup</h3>
+        <div class="box-section">
+            <label><strong>Company Name:</strong></label>
+            <input type="text" id="busName" class="input-field" placeholder="Golden Star Furniture and Interior">
+            
+            <label><strong>Business Address:</strong></label>
+            <textarea id="busAddress" class="input-field" placeholder="X Change Road, Lalchowk, Srinagar, J&K - 190008"></textarea>
+            
+            <label><strong>GSTIN Number:</strong></label>
+            <input type="text" id="busGstin" class="input-field" placeholder="01EBWPS3295G1Z4">
+            
+            <h4 style="margin-top:15px;">Bank Details</h4>
+            <label>Bank Name:</label>
+            <input type="text" id="bankName" class="input-field" placeholder="Jammu and Kashmir Bank">
+            <label>Branch:</label>
+            <input type="text" id="bankBranch" class="input-field" placeholder="SSI BRANCH">
+            <label>Account Name:</label>
+            <input type="text" id="bankAccName" class="input-field" placeholder="Golden Star Furniture and Interior">
+            <label>Account Number:</label>
+            <input type="text" id="bankAccNo" class="input-field" placeholder="0777020100000609">
+            <label>IFSC Code:</label>
+            <input type="text" id="bankIfsc" class="input-field" placeholder="JAKAOSSISGR">
+            
+            <button class="btn" onclick="saveBusinessProfile()" style="margin-top:10px;">Save Business Profile</button>
+        </div>
+    </div>
+
+    <!-- 3. CUSTOMER PANEL -->
     <div id="customersPanel" class="panel">
         <h3>Customer Management</h3>
         <div class="box-section">
             <h4>Add New Customer</h4>
-            <input type="text" id="newCustName" class="input-field" placeholder="Customer Name" style="margin-bottom:8px;">
-            <textarea id="newCustAddress" class="input-field" placeholder="Billing Address" style="margin-bottom:8px;"></textarea>
-            <input type="text" id="newCustPhone" class="input-field" placeholder="Phone Number" style="margin-bottom:8px;">
-            <input type="text" id="newCustGstin" class="input-field" placeholder="GSTIN (Optional)" style="margin-bottom:8px;">
+            <input type="text" id="newCustName" class="input-field" placeholder="Customer Name">
+            <textarea id="newCustAddress" class="input-field" placeholder="Billing Address"></textarea>
+            <input type="text" id="newCustPhone" class="input-field" placeholder="Phone Number">
+            <input type="text" id="newCustGstin" class="input-field" placeholder="GSTIN (Optional)">
             <button class="btn" onclick="saveCustomer()">Save Customer</button>
         </div>
         <h4 style="margin-top: 20px;">Saved Customers List</h4>
         <ul id="customerList" style="padding-left: 20px; font-size: 13px;"></ul>
     </div>
 
-    <!-- 3. INVENTORY PANEL -->
+    <!-- 4. INVENTORY PANEL -->
     <div id="inventoryPanel" class="panel">
         <h3>Item & Stock Management</h3>
         <div class="box-section">
             <h4>Add New Product / Stock</h4>
-            <input type="text" id="prodName" class="input-field" placeholder="Product Name" style="margin-bottom:8px;">
-            <input type="text" id="prodHsn" class="input-field" placeholder="HSN/SAC Code" style="margin-bottom:8px;">
-            <input type="number" id="prodPrice" class="input-field" placeholder="Default Rate (₹)" style="margin-bottom:8px;">
-            <input type="number" id="prodStock" class="input-field" placeholder="Initial Stock Quantity" style="margin-bottom:8px;">
+            <input type="text" id="prodName" class="input-field" placeholder="Product Name">
+            <input type="text" id="prodHsn" class="input-field" placeholder="HSN/SAC Code">
+            <input type="number" id="prodPrice" class="input-field" placeholder="Default Rate (₹)">
+            <input type="number" id="prodStock" class="input-field" placeholder="Initial Stock Quantity">
             <button class="btn" onclick="saveProduct()">Save Product to Stock</button>
         </div>
         <h4 style="margin-top: 20px;">Current Stock Inventory</h4>
@@ -298,14 +330,23 @@
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody id="inventoryTableBody">
-                <!-- Inventory Items -->
-            </tbody>
+            <tbody id="inventoryTableBody"></tbody>
         </table>
     </div>
 </div>
 
 <script>
+    let business = JSON.parse(localStorage.getItem('gs_business')) || {
+        name: "Golden Star Furniture and Interior",
+        address: "X Change Road, Lalchowk, Srinagar, J&K - 190008",
+        gstin: "01EBWPS3295G1Z4",
+        bankName: "Jammu and Kashmir Bank",
+        branch: "SSI BRANCH",
+        accName: "Golden Star Furniture and Interior",
+        accNo: "0777020100000609",
+        ifsc: "JAKAOSSISGR"
+    };
+
     let customers = JSON.parse(localStorage.getItem('gs_customers')) || [
         { name: "PRINCIPAL KV1, SRINAGAR", address: "POST BATWARA, SHIV PORA MOD, Srinagar - 190004", phone: "7006688390", gstin: "" }
     ];
@@ -319,6 +360,11 @@
         if(tab === 'invoice') {
             document.getElementById('invoicePanel').classList.add('active');
             event.target.classList.add('active');
+            loadBusinessProfileToInvoice();
+        } else if(tab === 'business') {
+            document.getElementById('businessPanel').classList.add('active');
+            event.target.classList.add('active');
+            loadBusinessForm();
         } else if(tab === 'customers') {
             document.getElementById('customersPanel').classList.add('active');
             event.target.classList.add('active');
@@ -328,6 +374,39 @@
             event.target.classList.add('active');
             renderInventoryTable();
         }
+    }
+
+    function loadBusinessForm() {
+        document.getElementById('busName').value = business.name;
+        document.getElementById('busAddress').value = business.address;
+        document.getElementById('busGstin').value = business.gstin;
+        document.getElementById('bankName').value = business.bankName;
+        document.getElementById('bankBranch').value = business.branch;
+        document.getElementById('bankAccName').value = business.accName;
+        document.getElementById('bankAccNo').value = business.accNo;
+        document.getElementById('bankIfsc').value = business.ifsc;
+    }
+
+    function saveBusinessProfile() {
+        business = {
+            name: document.getElementById('busName').value.trim(),
+            address: document.getElementById('busAddress').value.trim(),
+            gstin: document.getElementById('busGstin').value.trim(),
+            bankName: document.getElementById('bankName').value.trim(),
+            branch: document.getElementById('bankBranch').value.trim(),
+            accName: document.getElementById('bankAccName').value.trim(),
+            accNo: document.getElementById('bankAccNo').value.trim(),
+            ifsc: document.getElementById('bankIfsc').value.trim()
+        };
+        localStorage.setItem('gs_business', JSON.stringify(business));
+        alert("Business profile updated successfully!");
+        loadBusinessProfileToInvoice();
+    }
+
+    function loadBusinessProfileToInvoice() {
+        document.getElementById('lblCompanyName').innerText = business.name;
+        document.getElementById('lblCompanyDetails').innerHTML = `${business.address.replace(/\n/g, '<br>')}<br><strong>GSTIN:</strong> ${business.gstin}`;
+        document.getElementById('lblBankDetails').innerHTML = `<strong>Bank Details:</strong><br>${business.bankName} | ${business.branch}<br>Acc Name: ${business.accName}<br>Acc No: ${business.accNo} | IFSC: ${business.ifsc}`;
     }
 
     function saveCustomer() {
@@ -398,7 +477,6 @@
     function renderInventoryTable() {
         let tbody = document.getElementById('inventoryTableBody');
         tbody.innerHTML = '';
-        inventory.py = inventory || [];
         inventory.forEach((p, idx) => {
             tbody.innerHTML += `
                 <tr>
@@ -495,6 +573,7 @@
     }
 
     window.onload = function() {
+        loadBusinessProfileToInvoice();
         addItemRow();
         populateCustomerDropdown();
     }
