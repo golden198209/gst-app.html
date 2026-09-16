@@ -143,16 +143,6 @@
             border: 1px solid #ccc;
             border-radius: 3px;
         }
-        .btn {
-            background-color: #007bff;
-            color: white;
-            padding: 8px 15px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            border-radius: 4px;
-        }
-        .btn:hover { background-color: #0056b3; }
         .btn-success { background-color: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;}
         .btn-info { background-color: #17a2b8; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;}
         .btn-whatsapp { background-color: #25d366; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
@@ -202,8 +192,7 @@
             <!-- Firm Selector Bar -->
             <div class="box-section no-print" style="margin-bottom: 10px; background: #f9f9f9;">
                 <label><strong>Select Billing Firm:</strong></label>
-                <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()" style="font-weight: bold; margin-top: 4px;">
-                </select>
+                <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()" style="font-weight: bold; margin-top: 4px;"></select>
             </div>
 
             <div class="invoice-main-title">Tax Invoice</div>
@@ -229,9 +218,9 @@
             <table class="split-table">
                 <tr>
                     <td>
-                        <strong>Bill To (Customer GSTIN Auto-fill):</strong><br>
+                        <strong>Bill To (Type GSTIN to Auto-fill):</strong><br>
                         <label style="font-size:10px; color:#555;">Customer GSTIN:</label>
-                        <input type="text" id="custGstinInput" class="input-field" list="gstinList" placeholder="Type or select GSTIN" oninput="onGstinInput()" style="margin-bottom:4px;">
+                        <input type="text" id="custGstinInput" class="input-field" list="gstinList" placeholder="Type GSTIN to auto-fill name/address" oninput="onGstinInput()" style="margin-bottom:4px;">
                         <datalist id="gstinList"></datalist>
 
                         <label style="font-size:10px; color:#555;">Or Choose Customer Name:</label>
@@ -262,20 +251,21 @@
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th style="width: 5%;">#</th>
-                        <th style="width: 32%;">Item Name</th>
-                        <th style="width: 12%;">HSN/SAC</th>
-                        <th style="width: 8%;">Quantity</th>
-                        <th style="width: 8%;">Unit</th>
-                        <th style="width: 12%;">Price/ Unit (₹)</th>
-                        <th style="width: 12%;">GST (₹)</th>
-                        <th style="width: 11%;">Amount(₹)</th>
-                        <th class="no-print" style="width: 5%;">Act</th>
+                        <th style="width: 4%;">#</th>
+                        <th style="width: 28%;">Item Name</th>
+                        <th style="width: 10%;">HSN/SAC</th>
+                        <th style="width: 7%;">Qty</th>
+                        <th style="width: 7%;">Unit</th>
+                        <th style="width: 11%;">Price (₹)</th>
+                        <th style="width: 10%;">GST Rate</th>
+                        <th style="width: 11%;">GST (₹)</th>
+                        <th style="width: 12%;">Amount(₹)</th>
+                        <th class="no-print" style="width: 4%;">Act</th>
                     </tr>
                 </thead>
                 <tbody id="itemRows"></tbody>
             </table>
-            <button class="btn no-print" onclick="addItemRow()" style="margin-top: 5px; padding: 4px 10px; font-size: 12px;">+ Add Item</button>
+            <button class="btn-success no-print" onclick="addItemRow()" style="margin-top: 5px; padding: 4px 10px; font-size: 12px;">+ Add Item</button>
 
             <!-- Tax Summary & Totals Section -->
             <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
@@ -359,7 +349,7 @@
                 <button class="btn-info" onclick="downloadOrSharePDF()" style="flex: 1;">📥 PDF Download</button>
                 <button class="btn-whatsapp" onclick="shareOnWhatsApp()" style="flex: 1;">📱 Share WhatsApp</button>
                 <button class="btn-email" onclick="shareViaEmail()" style="flex: 1;">✉️ Share Email</button>
-                <button class="btn" onclick="resetInvoiceForm()" style="flex: 0.7; background-color: #6c757d;">Clear</button>
+                <button class="btn-danger" onclick="resetInvoiceForm()" style="flex: 0.7;">Clear</button>
             </div>
         </div>
     </div>
@@ -402,37 +392,28 @@
 
     <!-- 4. BUSINESS PROFILES PANEL -->
     <div id="businessPanel" class="panel">
-        <h3>Manage Firms (Apni Firm ki Detail Bhariye)</h3>
+        <h3>Manage Firms</h3>
         <div class="box-section">
             <h4 style="margin-top:0;">Add / Register New Firm</h4>
             <label><strong>Firm Name:</strong></label>
             <input type="text" id="busName" class="input-field" placeholder="e.g. Golden Star Furniture and Interior">
-            
             <label><strong>Invoice Prefix:</strong></label>
             <input type="text" id="busPrefix" class="input-field" placeholder="e.g. GSF">
-            
             <label><strong>Full Address:</strong></label>
             <textarea id="busAddress" class="input-field" placeholder="Shop address, Area, City, State"></textarea>
-            
             <label><strong>Phone Number:</strong></label>
             <input type="text" id="busPhone" class="input-field" placeholder="Mobile number">
-            
             <label><strong>GSTIN:</strong></label>
-            <input type="text" id="busGstin" class="input-field" placeholder="GST Number (optional)">
-            
+            <input type="text" id="busGstin" class="input-field" placeholder="GST Number">
             <h4 style="margin-top:12px; border-top:1px dashed #ccc; padding-top:8px;">Bank Details</h4>
             <label><strong>Bank Name & Branch:</strong></label>
-            <input type="text" id="bankName" class="input-field" placeholder="e.g. Jammu And Kashmir Bank Limited, Amira Kadal">
-            
+            <input type="text" id="bankName" class="input-field" placeholder="Bank Name">
             <label><strong>Account Number:</strong></label>
-            <input type="text" id="bankAccNo" class="input-field" placeholder="Bank Account Number">
-            
+            <input type="text" id="bankAccNo" class="input-field" placeholder="Account Number">
             <label><strong>IFSC Code:</strong></label>
             <input type="text" id="bankIfsc" class="input-field" placeholder="IFSC Code">
-            
-            <button class="btn btn-success" onclick="saveBusinessProfile()" style="margin-top: 10px; width:100%;">Save New Firm</button>
+            <button class="btn-success" onclick="saveBusinessProfile()" style="margin-top: 10px; width:100%;">Save New Firm</button>
         </div>
-        
         <h4 style="margin-top: 20px;">Already Saved Firms:</h4>
         <table class="items-table">
             <thead>
@@ -454,7 +435,7 @@
             <textarea id="newCustAddress" class="input-field" placeholder="Address"></textarea>
             <input type="text" id="newCustPhone" class="input-field" placeholder="Phone">
             <input type="text" id="newCustGstin" class="input-field" placeholder="GSTIN (Optional)">
-            <button class="btn" onclick="saveCustomer()">Save Customer</button>
+            <button class="btn-success" onclick="saveCustomer()">Save Customer</button>
         </div>
         <ul id="customerList" style="margin-top: 15px; font-size: 12px;"></ul>
     </div>
@@ -466,8 +447,15 @@
             <input type="text" id="prodName" class="input-field" placeholder="Product Name">
             <input type="text" id="prodHsn" class="input-field" placeholder="HSN/SAC">
             <input type="number" id="prodPrice" class="input-field" placeholder="Price (₹)">
+            <select id="prodGst" class="input-field">
+                <option value="18">18% GST</option>
+                <option value="12">12% GST</option>
+                <option value="28">28% GST</option>
+                <option value="5">5% GST</option>
+                <option value="0">0% GST</option>
+            </select>
             <input type="number" id="prodStock" class="input-field" placeholder="Stock Qty">
-            <button class="btn" onclick="saveProduct()">Save Product</button>
+            <button class="btn-success" onclick="saveProduct()">Save Product</button>
         </div>
         <table class="items-table" style="margin-top: 15px;">
             <thead>
@@ -475,6 +463,7 @@
                     <th>Product</th>
                     <th>HSN</th>
                     <th>Price</th>
+                    <th>GST</th>
                     <th>Stock</th>
                     <th>Action</th>
                 </tr>
@@ -502,8 +491,8 @@
         { name: "new vision enterprise", address: "1ST FLOOR TILE MARKET ROAD Srinagar", phone: "", gstin: "01CPMPM6255G1ZV" }
     ];
     let inventory = JSON.parse(localStorage.getItem('gs_inventory')) || [
-        { name: "Steel almirah big one", hsn: "9403", price: 9322.03, stock: 10 },
-        { name: "Almirah small", hsn: "9403", price: 5508.47, stock: 15 }
+        { name: "Steel almirah big one", hsn: "9403", price: 9322.03, gst: 18, stock: 10 },
+        { name: "Almirah small", hsn: "9403", price: 5508.47, gst: 18, stock: 15 }
     ];
     let invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
 
@@ -559,19 +548,9 @@
 
         companies.push({ name, prefix, address, phone, gstin, bankName, accNo, ifsc });
         localStorage.setItem('gs_companies', JSON.stringify(companies));
-        
         populateFirmDropdowns();
         renderCompanyTable();
         alert("Firm successfully save ho gayi hai!");
-        
-        document.getElementById('busName').value = '';
-        document.getElementById('busPrefix').value = '';
-        document.getElementById('busAddress').value = '';
-        document.getElementById('busPhone').value = '';
-        document.getElementById('busGstin').value = '';
-        document.getElementById('bankName').value = '';
-        document.getElementById('bankAccNo').value = '';
-        document.getElementById('bankIfsc').value = '';
     }
 
     function renderCompanyTable() {
@@ -601,20 +580,29 @@
         tr.innerHTML = `
             <td>${rowCount}</td>
             <td class="left">
-                <input type="text" class="input-field prod-name-input" list="${datalistId}" placeholder="Type or select item" onchange="onItemNameSelected(this)" style="margin-bottom:0;">
+                <input type="text" class="input-field prod-name-input" list="${datalistId}" placeholder="Select item" onchange="onItemNameSelected(this)" style="margin-bottom:0;">
                 <datalist id="${datalistId}">${optionsHtml}</datalist>
             </td>
             <td><input type="text" class="input-field hsn" value="9403" style="width: 55px; margin-bottom:0;"></td>
-            <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 45px; margin-bottom:0;"></td>
+            <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 40px; margin-bottom:0;"></td>
             <td>
-                <select class="input-field unit" style="width: 55px; margin-bottom:0;">
+                <select class="input-field unit" style="width: 50px; margin-bottom:0;">
                     <option value="Nos">Nos</option>
                     <option value="Pcs">Pcs</option>
                     <option value="Set">Set</option>
                     <option value="-">-</option>
                 </select>
             </td>
-            <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 70px; margin-bottom:0;"></td>
+            <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 65px; margin-bottom:0;"></td>
+            <td>
+                <select class="input-field gst-rate" onchange="calculateTotals()" style="width: 60px; margin-bottom:0;">
+                    <option value="18" selected>18%</option>
+                    <option value="12">12%</option>
+                    <option value="28">28%</option>
+                    <option value="5">5%</option>
+                    <option value="0">0%</option>
+                </select>
+            </td>
             <td class="right gst-val">0.00</td>
             <td class="right row-total">0.00</td>
             <td class="no-print"><button onclick="this.closest('tr').remove(); calculateTotals();" class="btn-danger" style="padding:2px 5px;">X</button></td>
@@ -629,6 +617,7 @@
             let tr = inputElem.closest('tr');
             tr.querySelector('.hsn').value = p.hsn;
             tr.querySelector('.rate').value = p.price;
+            tr.querySelector('.gst-rate').value = p.gst !== undefined ? p.gst : 18;
             calculateTotals();
         }
     }
@@ -643,31 +632,32 @@
             let qty = parseFloat(row.querySelector('.qty').value) || 0;
             let inputRate = parseFloat(row.querySelector('.rate').value) || 0;
             let hsn = row.querySelector('.hsn').value || "9403";
+            let gstPercent = parseFloat(row.querySelector('.gst-rate').value) || 0;
             let taxable = 0;
             let total = 0;
             let gstAmt = 0;
 
-            if(priceMode === 'inclusive') {
-                let baseRate = inputRate / 1.18;
+            if(priceMode === 'inclusive' && gstPercent > 0) {
+                let baseRate = inputRate / (1 + (gstPercent / 100));
                 taxable = baseRate * qty;
                 gstAmt = (inputRate - baseRate) * qty;
                 total = inputRate * qty;
             } else {
                 taxable = inputRate * qty;
-                gstAmt = taxable * 0.18;
+                gstAmt = taxable * (gstPercent / 100);
                 total = taxable + gstAmt;
             }
 
-            row.querySelector('.gst-val').innerText = `${gstAmt.toFixed(2)}\n(18.0%)`;
+            row.querySelector('.gst-val').innerText = `${gstAmt.toFixed(2)}\n(${gstPercent}%)`;
             row.querySelector('.row-total').innerText = `₹${total.toFixed(2)}`;
             subTotal += taxable + gstAmt;
 
             if(!taxSummaryMap[hsn]) {
-                taxSummaryMap[hsn] = { taxable: 0, cgstAmt: 0, sgstAmt: 0, totalTax: 0 };
+                taxSummaryMap[hsn] = { rate: gstPercent, taxable: 0, cgstAmt: 0, sgstAmt: 0, totalTax: 0 };
             }
             taxSummaryMap[hsn].taxable += taxable;
-            taxSummaryMap[hsn].cgstAmt += (taxable * 0.09);
-            taxSummaryMap[hsn].sgstAmt += (taxable * 0.09);
+            taxSummaryMap[hsn].cgstAmt += (taxable * (gstPercent / 200));
+            taxSummaryMap[hsn].sgstAmt += (taxable * (gstPercent / 200));
             taxSummaryMap[hsn].totalTax += gstAmt;
         });
 
@@ -682,13 +672,14 @@
             totSgst += t.sgstAmt;
             totAllTax += t.totalTax;
 
+            let halfRate = t.rate / 2;
             taxBody.innerHTML += `
                 <tr>
                     <td>${hsn}</td>
                     <td class="right">${t.taxable.toFixed(2)}</td>
-                    <td>9.0</td>
+                    <td>${halfRate}</td>
                     <td class="right">${t.cgstAmt.toFixed(2)}</td>
-                    <td>9.0</td>
+                    <td>${halfRate}</td>
                     <td class="right">${t.sgstAmt.toFixed(2)}</td>
                     <td class="right">${t.totalTax.toFixed(2)}</td>
                 </tr>
@@ -930,9 +921,10 @@
         let name = document.getElementById('prodName').value.trim();
         let hsn = document.getElementById('prodHsn').value.trim();
         let price = parseFloat(document.getElementById('prodPrice').value) || 0;
+        let gst = parseFloat(document.getElementById('prodGst').value) || 18;
         let stock = parseInt(document.getElementById('prodStock').value) || 0;
         if(!name) return;
-        inventory.push({name, hsn, price, stock});
+        inventory.push({name, hsn, price, gst, stock});
         localStorage.setItem('gs_inventory', JSON.stringify(inventory));
         renderInventoryTable();
         alert("Product saved!");
@@ -942,7 +934,7 @@
         let tbody = document.getElementById('inventoryTableBody');
         tbody.innerHTML = '';
         inventory.forEach((p, idx) => {
-            tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.stock}</td><td><button onclick="inventory.splice(${idx},1); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button onclick="inventory.splice(${idx},1); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
         });
     }
 
