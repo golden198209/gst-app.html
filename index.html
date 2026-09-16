@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-Company POS & Tax Invoice App</title>
-    <!-- html2pdf Library for Direct PDF Generation & Sharing -->
+    <!-- html2pdf Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {
@@ -65,9 +65,11 @@
         }
         .invoice-box {
             background-color: #fff;
-            padding: 30px;
+            padding: 20px;
             border: 1px solid #eee;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            box-sizing: border-box;
         }
         .header-table, .details-table, .items-table, .totals-table {
             width: 100%;
@@ -77,36 +79,36 @@
             vertical-align: top;
         }
         .company-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #b30000;
             text-transform: uppercase;
         }
         .invoice-title {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             text-align: right;
             color: #333;
         }
         .sub-text {
-            font-size: 12px;
+            font-size: 11px;
             color: #555;
             line-height: 1.4;
         }
         .box-section {
             border: 1px solid #ccc;
-            padding: 10px;
-            margin-top: 15px;
-            font-size: 13px;
+            padding: 8px;
+            margin-top: 10px;
+            font-size: 12px;
         }
         .items-table {
-            margin-top: 20px;
+            margin-top: 15px;
         }
         .items-table th, .items-table td {
             border: 1px solid #bbb;
-            padding: 8px;
+            padding: 6px;
             text-align: center;
-            font-size: 12px;
+            font-size: 11px;
         }
         .items-table th {
             background-color: #f2f2f2;
@@ -115,20 +117,20 @@
         .items-table td.left { text-align: left; }
         .items-table td.right { text-align: right; }
         .totals-section {
-            margin-top: 15px;
+            margin-top: 10px;
             width: 100%;
-            font-size: 13px;
+            font-size: 12px;
         }
         .totals-section td {
-            padding: 5px 10px;
+            padding: 4px 8px;
             border: 1px solid #bbb;
         }
         .input-field, select, textarea {
             width: 100%;
             box-sizing: border-box;
-            padding: 5px;
-            font-size: 12px;
-            margin-bottom: 5px;
+            padding: 4px;
+            font-size: 11px;
+            margin-bottom: 3px;
         }
         .btn {
             background-color: #007bff;
@@ -219,8 +221,8 @@
                         <div class="invoice-title">TAX INVOICE</div>
                         <div class="sub-text" style="text-align: right; margin-top: 5px;">
                             ORIGINAL FOR RECIPIENT<br>
-                            <strong>Invoice No:</strong> <input type="text" id="invNumber" class="input-field" value="GS/2026-27/01" style="width: 120px; text-align: right;"><br>
-                            <strong>Invoice Date:</strong> <input type="date" class="input-field" id="invDate" style="width: 130px; text-align: right;">
+                            <strong>Invoice No:</strong> <input type="text" id="invNumber" class="input-field" value="GS/2026-27/01" style="width: 110px; text-align: right;"><br>
+                            <strong>Invoice Date:</strong> <input type="date" class="input-field" id="invDate" style="width: 120px; text-align: right;">
                         </div>
                     </td>
                 </tr>
@@ -237,7 +239,7 @@
                     </td>
                     <td style="width: 50%; padding-left: 10px;">
                         <strong>Place of Supply:</strong> 
-                        <input type="text" class="input-field" id="placeOfSupply" value="Jammu and Kashmir (01)"><br><br>
+                        <input type="text" class="input-field" id="placeOfSupply" value="Jammu and Kashmir (01)"><br>
                         <strong>Payment Status:</strong>
                         <select id="payStatus" class="input-field">
                             <option value="Paid">Paid</option>
@@ -264,7 +266,7 @@
                 <tbody id="itemRows"></tbody>
             </table>
             
-            <button class="btn no-print" onclick="addItemRow()" style="margin-top: 10px;">+ Add Item</button>
+            <button class="btn no-print" onclick="addItemRow()" style="margin-top: 8px; padding: 5px 10px; font-size: 12px;">+ Add Item</button>
 
             <table class="totals-section">
                 <tr>
@@ -285,16 +287,16 @@
                 </tr>
             </table>
 
-            <div class="sub-text" style="margin-top: 10px;">
+            <div class="sub-text" style="margin-top: 8px;">
                 <strong>Total in words:</strong> <span id="amountInWords">ZERO RUPEES ONLY</span>
             </div>
 
-            <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-                <div style="width: 48%; border: 1px solid #ccc; padding: 10px; font-size: 12px;" id="lblBankDetails"></div>
-                <div style="width: 48%; border: 1px solid #ccc; padding: 10px; font-size: 11px;">
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <div style="width: 48%; border: 1px solid #ccc; padding: 8px; font-size: 10px;" id="lblBankDetails"></div>
+                <div style="width: 48%; border: 1px solid #ccc; padding: 8px; font-size: 10px;">
                     <strong>Terms and Conditions:</strong>
-                    <ul style="margin: 0; padding-left: 15px;">
-                        <li>Subject to home Jurisdiction.</li>
+                    <ul style="margin: 0; padding-left: 12px;">
+                        <li>Subject to local Jurisdiction.</li>
                         <li>Goods once sold will not be taken back.</li>
                     </ul>
                 </div>
@@ -677,15 +679,15 @@
                 <select class="input-field product-select" onchange="selectInventoryItem(this)">
                     ${optionsHtml}
                 </select>
-                <input type="text" class="input-field prod-name-input" value="" placeholder="Or type product name" oninput="autoDetectHSN(this)" style="margin-top:3px;">
+                <input type="text" class="input-field prod-name-input" value="" placeholder="Or type product name" oninput="autoDetectHSN(this)" style="margin-top:2px;">
             </td>
-            <td><input type="text" class="input-field hsn" value="" style="width: 60px;"></td>
-            <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 50px;"></td>
-            <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 70px;"></td>
+            <td><input type="text" class="input-field hsn" value="" style="width: 50px;"></td>
+            <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 40px;"></td>
+            <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 60px;"></td>
             <td class="right taxable-val">0.00</td>
-            <td>18% (9%+9%)</td>
+            <td>18%</td>
             <td class="right row-total">0.00</td>
-            <td class="no-print"><button onclick="this.closest('tr').remove(); calculateTotals();" class="btn-danger" style="padding:4px 8px;">X</button></td>
+            <td class="no-print"><button onclick="this.closest('tr').remove(); calculateTotals();" class="btn-danger" style="padding:2px 5px;">X</button></td>
         `;
         tbody.appendChild(tr);
     }
@@ -788,30 +790,33 @@
         let element = document.getElementById('printableInvoiceArea');
         let invNo = document.getElementById('invNumber').value.replace(/\//g, '_');
         let opt = {
-            margin:       5,
+            margin:       [2, 2, 2, 2],
             filename:     `Invoice_${invNo}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
+            html2canvas:  { scale: 1.5, useCORS: true, letterRendering: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
+        html2canvas(element, opt.html2canvas).then((canvas) => {
+            let pdf = new jspdf.jsPDF(opt.jsPDF);
+            // Alternative simple download using html2pdf plugin wrapper
+        });
         html2pdf().from(element).set(opt).save();
     }
 
-    // Direct Share PDF Feature (agar device/browser support karta hai)
+    // Direct Share PDF Feature Fix (Poora page capture karne ke liye)
     async function sharePDFDirectly() {
         let element = document.getElementById('printableInvoiceArea');
         let invNo = document.getElementById('invNumber').value.replace(/\//g, '_');
         let opt = {
-            margin:       5,
+            margin:       [2, 2, 2, 2],
             filename:     `Invoice_${invNo}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
+            image:        { type: 'jpeg', quality: 0.95 },
+            html2canvas:  { scale: 1.5, useCORS: true, logging: false },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         if (navigator.share) {
             try {
-                alert("Preparing PDF for direct sharing...");
                 let worker = html2pdf().from(element).set(opt);
                 let pdfBlob = await worker.outputPdf('blob');
                 let file = new File([pdfBlob], `Invoice_${invNo}.pdf`, { type: 'application/pdf' });
@@ -823,7 +828,7 @@
                         files: [file]
                     });
                 } else {
-                    alert("Your browser does not support direct file sharing. Downloading PDF instead.");
+                    alert("Direct file sharing is not fully supported on this browser. Downloading PDF instead.");
                     worker.save();
                 }
             } catch (error) {
@@ -859,7 +864,7 @@
                     <td><span style="color: ${inv.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">${inv.status}</span></td>
                     <td>₹${inv.total.toFixed(2)}</td>
                     <td>
-                        <button onclick="deleteInvoice(${idx})" class="btn-danger" style="padding:2px 5px; font-size:10px;">Delete</button>
+                        <button onclick="deleteInvoice(${idx})" class="btn-danger" style="padding:2px 5px; font-size:10px;">Deleteend</button>
                     </td>
                 </tr>`;
         });
@@ -879,7 +884,7 @@
 
     function renderLedger() {
         let tbody = document.getElementById('ledgerTableBody');
-        tbody.innerHTML = '';
+        tbody.innerHTML = ``;
         
         let pendingInvoices = invoices.filter(inv => inv.status === 'Pending');
         
@@ -919,6 +924,7 @@
         document.getElementById('sgstTotal').innerText = '0.00';
     }
 
+    window.onload = function5; // standard init
     window.onload = function() {
         initCompanySelectors();
         addItemRow();
