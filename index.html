@@ -3,22 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tax Invoice - Golden Star Furniture and Interior</title>
+    <title>POS & Tax Invoice - Golden Star Furniture and Interior</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #555;
+            background-color: #f0f2f5;
             color: #000;
         }
-        .invoice-box {
-            max-width: 800px;
+        .container {
+            max-width: 900px;
             margin: auto;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            background-color: #ddd;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .tab-btn.active {
+            background-color: #b30000;
+            color: white;
+        }
+        .panel {
+            display: none;
+            background: #fff;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .panel.active {
+            display: block;
+        }
+        .invoice-box {
+            background-color: #fff;
             padding: 30px;
             border: 1px solid #eee;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-            background-color: #fff;
         }
         .header-table, .details-table, .items-table, .totals-table {
             width: 100%;
@@ -63,24 +92,8 @@
             background-color: #f2f2f2;
             font-weight: bold;
         }
-        .items-table td.left {
-            text-align: left;
-        }
-        .items-table td.right {
-            text-align: right;
-        }
-        .footer-section {
-            margin-top: 20px;
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .bank-details, .terms {
-            width: 48%;
-            border: 1px solid #ccc;
-            padding: 10px;
-            box-sizing: border-box;
-        }
+        .items-table td.left { text-align: left; }
+        .items-table td.right { text-align: right; }
         .totals-section {
             margin-top: 15px;
             width: 100%;
@@ -90,228 +103,401 @@
             padding: 5px 10px;
             border: 1px solid #bbb;
         }
-        .input-field {
+        .input-field, select {
             width: 100%;
             box-sizing: border-box;
-            padding: 4px;
+            padding: 5px;
             font-size: 12px;
         }
-        .btn-print {
-            margin-top: 20px;
+        .btn {
             background-color: #007bff;
             color: white;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border: none;
             cursor: pointer;
-            font-size: 16px;
-            display: block;
-            width: 100%;
-            text-align: center;
+            font-size: 14px;
+            border-radius: 4px;
         }
-        .btn-print:hover {
-            background-color: #0056b3;
+        .btn:hover { background-color: #0056b3; }
+        .btn-danger { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;}
+        .btn-danger:hover { background-color: #bd2130; }
+        .settings-bar {
+            background: #e9ecef;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 13px;
         }
         @media print {
-            body {
-                background-color: #fff;
-                padding: 0;
-            }
-            .invoice-box {
-                box-shadow: none;
-                border: none;
-                padding: 0;
-            }
-            .btn-print, .no-print {
-                display: none;
-            }
-            .input-field {
-                border: none;
-                background: transparent;
-            }
+            body { background-color: #fff; padding: 0; }
+            .container, .invoice-box { box-shadow: none; border: none; padding: 0; max-width: 100%; }
+            .tab-buttons, .no-print, .settings-bar { display: none; }
+            .input-field, select { border: none; background: transparent; appearance: none; }
         }
     </style>
 </head>
 <body>
 
-<div class="invoice-box">
-    <!-- Header -->
-    <table class="header-table">
-        <tr>
-            <td>
-                <div class="company-title">Golden Star Furniture and Interior</div>
-                <div class="sub-text">
-                    X Change Road, Lalchowk, Srinagar, Jammu and Kashmir<br>
-                    Near Adhar Center, Srinagar, J&K - 190008<br>
-                    <strong>GSTIN:</strong> 01EBWPS3295G1Z4
+<div class="container">
+    <!-- Navigation Tabs -->
+    <div class="tab-buttons no-print">
+        <button class="tab-btn active" onclick="switchTab('invoice', event)">Create Invoice</button>
+        <button class="tab-btn" onclick="switchTab('customers', event)">Manage Customers</button>
+        <button class="tab-btn" onclick="switchTab('inventory', event)">Item Stock Management</button>
+    </div>
+
+    <!-- SETTINGS BAR -->
+    <div class="settings-bar no-print">
+        <strong>Price Mode:</strong>
+        <label><input type="radio" name="priceMode" value="exclusive" checked onchange="calculateTotals()"> Without GST (Exclusive)</label>
+        <label><input type="radio" name="priceMode" value="inclusive" onchange="calculateTotals()"> With GST (Inclusive)</label>
+    </div>
+
+    <!-- 1. INVOICE PANEL -->
+    <div id="invoicePanel" class="panel active">
+        <div class="invoice-box">
+            <table class="header-table">
+                <tr>
+                    <td>
+                        <div class="company-title">Golden Star Furniture and Interior</div>
+                        <div class="sub-text">
+                            X Change Road, Lalchowk, Srinagar, J&K - 190008<br>
+                            <strong>GSTIN:</strong> 01EBWPS3295G1Z4
+                        </div>
+                    </td>
+                    <td>
+                        <div class="invoice-title">TAX INVOICE</div>
+                        <div class="sub-text" style="text-align: right; margin-top: 5px;">
+                            ORIGINAL FOR RECIPIENT<br>
+                            <strong>Invoice No:</strong> <input type="text" class="input-field" value="GS/2026-27/01" style="width: 120px; text-align: right;"><br>
+                            <strong>Invoice Date:</strong> <input type="date" class="input-field" id="invDate" value="2026-07-18" style="width: 130px; text-align: right;">
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <table class="header-table box-section">
+                <tr>
+                    <td style="width: 50%;">
+                        <strong>Select Customer:</strong>
+                        <select id="customerSelect" class="input-field" onchange="loadCustomerDetails()" style="margin-bottom: 5px;">
+                            <option value="">-- Choose Customer --</option>
+                        </select>
+                        <div id="customerInfo" class="sub-text"></div>
+                    </td>
+                    <td style="width: 50%; padding-left: 10px;">
+                        <strong>Place of Supply:</strong> 
+                        <input type="text" class="input-field" value="Jammu and Kashmir (01)"><br><br>
+                        <strong>Due Date:</strong> 
+                        <input type="date" class="input-field" value="2026-07-18">
+                    </td>
+                </tr>
+            </table>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Sr.</th>
+                        <th>Product / Service</th>
+                        <th>HSN/SAC</th>
+                        <th>Qty</th>
+                        <th>Rate (₹)</th>
+                        <th>Taxable (₹)</th>
+                        <th>GST %</th>
+                        <th>Total (₹)</th>
+                        <th class="no-print">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="itemRows">
+                    <!-- Dynamic Rows -->
+                </tbody>
+            </table>
+            
+            <button class="btn no-print" onclick="addItemRow()" style="margin-top: 10px;">+ Add Item</button>
+
+            <table class="totals-section">
+                <tr>
+                    <td style="width: 70%; text-align: right;"><strong>Taxable Amount:</strong></td>
+                    <td style="width: 30%; text-align: right;" id="subTotal">0.00</td>
+                </tr>
+                <tr>
+                    <td style="text-align: right;"><strong>Add: CGST:</strong></td>
+                    <td style="text-align: right;" id="cgstTotal">0.00</td>
+                </tr>
+                <tr>
+                    <td style="text-align: right;"><strong>Add: SGST:</strong></td>
+                    <td style="text-align: right;" id="sgstTotal">0.00</td>
+                </tr>
+                <tr>
+                    <td style="text-align: right;"><strong>Grand Total:</strong></td>
+                    <td style="text-align: right; font-weight: bold;" id="grandTotal">0.00</td>
+                </tr>
+            </table>
+
+            <div class="sub-text" style="margin-top: 10px;">
+                <strong>Total in words:</strong> <span id="amountInWords">ZERO RUPEES ONLY</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                <div style="width: 48%; border: 1px solid #ccc; padding: 10px; font-size: 12px;">
+                    <strong>Bank Details:</strong><br>
+                    J&K Bank | SSI Branch<br>
+                    Acc Name: Golden Star Furniture and Interior<br>
+                    Acc No: 0777020100000609 | IFSC: JAKAOSSISGR
                 </div>
-            </td>
-            <td>
-                <div class="invoice-title">TAX INVOICE</div>
-                <div class="sub-text" style="text-align: right; margin-top: 5px;">
-                    ORIGINAL FOR RECIPIENT<br>
-                    <strong>Invoice No:</strong> <input type="text" class="input-field" value="GS/2026-27/01" style="width: 120px; text-align: right;"><br>
-                    <strong>Invoice Date:</strong> <input type="date" class="input-field" id="invDate" value="2026-07-18" style="width: 130px; text-align: right;">
+                <div style="width: 48%; border: 1px solid #ccc; padding: 10px; font-size: 11px;">
+                    <strong>Terms and Conditions:</strong>
+                    <ul style="margin: 0; padding-left: 15px;">
+                        <li>Subject to home Jurisdiction.</li>
+                        <li>Goods once sold will not be taken back.</li>
+                    </ul>
                 </div>
-            </td>
-        </tr>
-    </table>
+            </div>
 
-    <!-- Customer & Billing Details -->
-    <table class="header-table box-section" style="width: 100%;">
-        <tr>
-            <td style="width: 50%;">
-                <strong>Customer Detail (Billed To):</strong><br>
-                <input type="text" class="input-field" id="custName" value="PRINCIPAL KV1, SRINAGAR" placeholder="Customer Name"><br>
-                <textarea class="input-field" id="custAddress" rows="2" placeholder="Customer Address">POST BATWARA, SHIV PORA MOD, Srinagar Jammu and Kashmir - 190004</textarea>
-                Phone: <input type="text" class="input-field" id="custPhone" value="7006688390" style="width: 150px;"><br>
-                GSTIN: <input type="text" class="input-field" id="custGstin" value="" placeholder="Unregistered / GSTIN" style="width: 150px;">
-            </td>
-            <td style="width: 50%; padding-left: 10px;">
-                <strong>Place of Supply:</strong> 
-                <input type="text" class="input-field" value="Jammu and Kashmir (01)"><br><br>
-                <strong>Due Date:</strong> 
-                <input type="date" class="input-field" value="2026-07-18">
-            </td>
-        </tr>
-    </table>
-
-    <!-- Items Table -->
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th>Sr. No.</th>
-                <th>Name of Product / Service</th>
-                <th>HSN/SAC</th>
-                <th>Qty</th>
-                <th>Rate (₹)</th>
-                <th>Taxable Value (₹)</th>
-                <th>CGST (%)</th>
-                <th>SGST (%)</th>
-                <th>Total (₹)</th>
-            </tr>
-        </thead>
-        <tbody id="itemRows">
-            <tr>
-                <td>1</td>
-                <td class="left"><input type="text" class="input-field" value="BI PAINTS Epoxy Paints Marine Paints, size 1 lt in can"></td>
-                <td><input type="text" class="input-field" value="3209" style="width: 60px;"></td>
-                <td><input type="number" class="input-field qty" value="50" oninput="calculateTotals()" style="width: 50px;"></td>
-                <td><input type="number" class="input-field rate" value="294.92" oninput="calculateTotals()" style="width: 70px;"></td>
-                <td class="right taxable-val">14,746.00</td>
-                <td>9%</td>
-                <td>9%</td>
-                <td class="right row-total">17,400.28</td>
-            </tr>
-        </tbody>
-    </table>
-    
-    <button class="no-print" onclick="addItemRow()" style="margin-top: 10px; padding: 5px 10px; cursor: pointer;">+ Add Item</button>
-
-    <!-- Totals & Tax Calculation -->
-    <table class="totals-section">
-        <tr>
-            <td style="width: 70%; text-align: right;"><strong>Taxable Amount:</strong></td>
-            <td style="width: 30%; text-align: right;" id="subTotal">14,746.00</td>
-        </tr>
-        <tr>
-            <td style="text-align: right;"><strong>Add: CGST (9%):</strong></td>
-            <td style="text-align: right;" id="cgstTotal">1,327.14</td>
-        </tr>
-        <tr>
-            <td style="text-align: right;"><strong>Add: SGST (9%):</strong></td>
-            <td style="text-align: right;" id="sgstTotal">1,327.14</td>
-        </tr>
-        <tr>
-            <td style="text-align: right;"><strong>Total Amount After Tax:</strong></td>
-            <td style="text-align: right; font-weight: bold;" id="grandTotal">17,400.28</td>
-        </tr>
-    </table>
-
-    <div class="sub-text" style="margin-top: 10px;">
-        <strong>Total in words:</strong> <span id="amountInWords">SEVENTEEN THOUSAND FOUR HUNDRED RUPEES ONLY</span>
-    </div>
-
-    <!-- Bank Details and Terms -->
-    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-        <div class="bank-details" style="width: 48%;">
-            <strong>Bank Details:</strong><br>
-            Bank Name: Jammu and Kashmir Bank<br>
-            Branch: SSI BRANCH<br>
-            Acc. Name: Golden Star Furniture and Interior<br>
-            Acc. Number: 0777020100000609<br>
-            IFSC: JAKAOSSISGR
-        </div>
-        <div class="terms" style="width: 48%;">
-            <strong>Terms and Conditions:</strong>
-            <ul style="margin: 0; padding-left: 15px; font-size: 11px;">
-                <li>Subject to our home Jurisdiction.</li>
-                <li>Our Responsibility Ceases as soon as goods leaves our Premises.</li>
-                <li>Goods once sold will not taken back.</li>
-                <li>Delivery Ex-Premises. (E & O.E.)</li>
-            </ul>
+            <button class="btn no-print" onclick="window.print()" style="margin-top: 20px; width: 100%;">Print / Save PDF</button>
         </div>
     </div>
 
-    <!-- Signature -->
-    <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end;">
-        <div class="sub-text">
-            Certified that the particulars given above are true and correct.
+    <!-- 2. CUSTOMER PANEL -->
+    <div id="customersPanel" class="panel">
+        <h3>Customer Management</h3>
+        <div class="box-section">
+            <h4>Add New Customer</h4>
+            <input type="text" id="newCustName" class="input-field" placeholder="Customer Name" style="margin-bottom:8px;">
+            <textarea id="newCustAddress" class="input-field" placeholder="Billing Address" style="margin-bottom:8px;"></textarea>
+            <input type="text" id="newCustPhone" class="input-field" placeholder="Phone Number" style="margin-bottom:8px;">
+            <input type="text" id="newCustGstin" class="input-field" placeholder="GSTIN (Optional)" style="margin-bottom:8px;">
+            <button class="btn" onclick="saveCustomer()">Save Customer</button>
         </div>
-        <div style="text-align: right;" class="sub-text">
-            For <strong>Golden Star Furniture and Interior</strong><br><br><br>
-            Authorised Signatory
-        </div>
+        <h4 style="margin-top: 20px;">Saved Customers List</h4>
+        <ul id="customerList" style="padding-left: 20px; font-size: 13px;"></ul>
     </div>
 
-    <button class="btn-print no-print" onclick="window.print()">Print / Save as PDF</button>
+    <!-- 3. INVENTORY PANEL -->
+    <div id="inventoryPanel" class="panel">
+        <h3>Item & Stock Management</h3>
+        <div class="box-section">
+            <h4>Add New Product / Stock</h4>
+            <input type="text" id="prodName" class="input-field" placeholder="Product Name" style="margin-bottom:8px;">
+            <input type="text" id="prodHsn" class="input-field" placeholder="HSN/SAC Code" style="margin-bottom:8px;">
+            <input type="number" id="prodPrice" class="input-field" placeholder="Default Rate (₹)" style="margin-bottom:8px;">
+            <input type="number" id="prodStock" class="input-field" placeholder="Initial Stock Quantity" style="margin-bottom:8px;">
+            <button class="btn" onclick="saveProduct()">Save Product to Stock</button>
+        </div>
+        <h4 style="margin-top: 20px;">Current Stock Inventory</h4>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>HSN/SAC</th>
+                    <th>Price (₹)</th>
+                    <th>Available Stock</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="inventoryTableBody">
+                <!-- Inventory Items -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-function calculateTotals() {
-    let rows = document.querySelectorAll('#itemRows tr');
-    let subTotal = 0;
+    let customers = JSON.parse(localStorage.getItem('gs_customers')) || [
+        { name: "PRINCIPAL KV1, SRINAGAR", address: "POST BATWARA, SHIV PORA MOD, Srinagar - 190004", phone: "7006688390", gstin: "" }
+    ];
+    let inventory = JSON.parse(localStorage.getItem('gs_inventory')) || [
+        { name: "BI PAINTS Epoxy Paints Marine Paints, size 1 lt", hsn: "3209", price: 294.92, stock: 50 }
+    ];
 
-    rows.forEach(row => {
-        let qty = parseFloat(row.querySelector('.qty').value) || 0;
-        let rate = parseFloat(row.querySelector('.rate').value) || 0;
-        let taxable = qty * rate;
-        row.querySelector('.taxable-val').innerText = taxable.toFixed(2);
+    function switchTab(tab, event) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        if(tab === 'invoice') {
+            document.getElementById('invoicePanel').classList.add('active');
+            event.target.classList.add('active');
+        } else if(tab === 'customers') {
+            document.getElementById('customersPanel').classList.add('active');
+            event.target.classList.add('active');
+            renderCustomerList();
+        } else if(tab === 'inventory') {
+            document.getElementById('inventoryPanel').classList.add('active');
+            event.target.classList.add('active');
+            renderInventoryTable();
+        }
+    }
 
-        let cgst = taxable * 0.09;
-        let sgst = taxable * 0.09;
-        let total = taxable + cgst + sgst;
-        row.querySelector('.row-total').innerText = total.toFixed(2);
+    function saveCustomer() {
+        let name = document.getElementById('newCustName').value.trim();
+        let address = document.getElementById('newCustAddress').value.trim();
+        let phone = document.getElementById('newCustPhone').value.trim();
+        let gstin = document.getElementById('newCustGstin').value.trim();
+        if(!name) { alert("Please enter customer name"); return; }
+        customers.push({name, address, phone, gstin});
+        localStorage.setItem('gs_customers', JSON.stringify(customers));
+        alert("Customer saved successfully!");
+        document.getElementById('newCustName').value = '';
+        document.getElementById('newCustAddress').value = '';
+        document.getElementById('newCustPhone').value = '';
+        document.getElementById('newCustGstin').value = '';
+        renderCustomerList();
+    }
 
-        subTotal += taxable;
-    });
+    function renderCustomerList() {
+        let list = document.getElementById('customerList');
+        list.innerHTML = '';
+        customers.forEach((c, idx) => {
+            list.innerHTML += `<li><b>${c.name}</b> - ${c.phone} | ${c.address} <button onclick="deleteCustomer(${idx})" class="btn-danger" style="padding:2px 5px; font-size:10px;">Delete</button></li>`;
+        });
+        populateCustomerDropdown();
+    }
 
-    let totalCgst = subTotal * 0.09;
-    let totalSgst = subTotal * 0.09;
-    let grandTotal = subTotal + totalCgst + totalSgst;
+    function deleteCustomer(idx) {
+        customers.splice(idx, 1);
+        localStorage.setItem('gs_customers', JSON.stringify(customers));
+        renderCustomerList();
+    }
 
-    document.getElementById('subTotal').innerText = subTotal.toFixed(2);
-    document.getElementById('cgstTotal').innerText = totalCgst.toFixed(2);
-    document.getElementById('sgstTotal').innerText = totalSgst.toFixed(2);
-    document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
-}
+    function populateCustomerDropdown() {
+        let select = document.getElementById('customerSelect');
+        select.innerHTML = '<option value="">-- Choose Customer --</option>';
+        customers.forEach((c, idx) => {
+            select.innerHTML += `<option value="${idx}">${c.name}</option>`;
+        });
+    }
 
-function addItemRow() {
-    let tbody = document.getElementById('itemRows');
-    let rowCount = tbody.rows.length + 1;
-    let tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td>${rowCount}</td>
-        <td class="left"><input type="text" class="input-field" value="New Product/Service"></td>
-        <td><input type="text" class="input-field" value="" style="width: 60px;"></td>
-        <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 50px;"></td>
-        <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 70px;"></td>
-        <td class="right taxable-val">0.00</td>
-        <td>9%</td>
-        <td>9%</td>
-        <td class="right row-total">0.00</td>
-    `;
-    tbody.appendChild(tr);
-}
+    function loadCustomerDetails() {
+        let idx = document.getElementById('customerSelect').value;
+        if(idx === "") {
+            document.getElementById('customerInfo').innerHTML = "";
+            return;
+        }
+        let c = customers[idx];
+        document.getElementById('customerInfo').innerHTML = `<strong>Address:</strong> ${c.address}<br><strong>Phone:</strong> ${c.phone}<br><strong>GSTIN:</strong> ${c.gstin || 'Unregistered'}`;
+    }
+
+    function saveProduct() {
+        let name = document.getElementById('prodName').value.trim();
+        let hsn = document.getElementById('prodHsn').value.trim();
+        let price = parseFloat(document.getElementById('prodPrice').value) || 0;
+        let stock = parseInt(document.getElementById('prodStock').value) || 0;
+        if(!name) { alert("Enter product name"); return; }
+        inventory.push({name, hsn, price, stock});
+        localStorage.setItem('gs_inventory', JSON.stringify(inventory));
+        alert("Product added to stock!");
+        document.getElementById('prodName').value = '';
+        document.getElementById('prodHsn').value = '';
+        document.getElementById('prodPrice').value = '';
+        document.getElementById('prodStock').value = '';
+        renderInventoryTable();
+    }
+
+    function renderInventoryTable() {
+        let tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+        inventory.py = inventory || [];
+        inventory.forEach((p, idx) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${p.name}</td>
+                    <td>${p.hsn}</td>
+                    <td>₹${p.price.toFixed(2)}</td>
+                    <td>${p.stock}</td>
+                    <td><button onclick="deleteProduct(${idx})" class="btn-danger" style="padding:2px 5px; font-size:10px;">Delete</button></td>
+                </tr>`;
+        });
+    }
+
+    function deleteProduct(idx) {
+        inventory.splice(idx, 1);
+        localStorage.setItem('gs_inventory', JSON.stringify(inventory));
+        renderInventoryTable();
+    }
+
+    function addItemRow() {
+        let tbody = document.getElementById('itemRows');
+        let rowCount = tbody.rows.length + 1;
+        let tr = document.createElement('tr');
+        
+        let optionsHtml = '<option value="">Select from Inventory</option>';
+        inventory.forEach((p, i) => {
+            optionsHtml += `<option value="${i}">${p.name} (Stock: ${p.stock})</option>`;
+        });
+
+        tr.innerHTML = `
+            <td>${rowCount}</td>
+            <td class="left">
+                <select class="input-field product-select" onchange="selectInventoryItem(this)">
+                    ${optionsHtml}
+                </select>
+                <input type="text" class="input-field prod-name-input" value="" placeholder="Or type product name" style="margin-top:3px;">
+            </td>
+            <td><input type="text" class="input-field hsn" value="" style="width: 60px;"></td>
+            <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 50px;"></td>
+            <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 70px;"></td>
+            <td class="right taxable-val">0.00</td>
+            <td>18% (9%+9%)</td>
+            <td class="right row-total">0.00</td>
+            <td class="no-print"><button onclick="this.closest('tr').remove(); calculateTotals();" class="btn-danger" style="padding:4px 8px;">X</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function selectInventoryItem(selectElem) {
+        let idx = selectElem.value;
+        if(idx === "") return;
+        let p = inventory[idx];
+        let tr = selectElem.closest('tr');
+        tr.querySelector('.prod-name-input').value = p.name;
+        tr.querySelector('.hsn').value = p.hsn;
+        tr.querySelector('.rate').value = p.price;
+        calculateTotals();
+    }
+
+    function calculateTotals() {
+        let rows = document.querySelectorAll('#itemRows tr');
+        let subTotal = 0;
+        let priceMode = document.querySelector('input[name="priceMode"]:checked').value;
+
+        rows.forEach(row => {
+            let qty = parseFloat(row.querySelector('.qty').value) || 0;
+            let inputRate = parseFloat(row.querySelector('.rate').value) || 0;
+            let taxable = 0;
+            let total = 0;
+
+            if(priceMode === 'inclusive') {
+                let baseRate = inputRate / 1.18;
+                taxable = baseRate * qty;
+                total = inputRate * qty;
+            } else {
+                taxable = inputRate * qty;
+                let cgst = taxable * 0.09;
+                let sgst = taxable * 0.09;
+                total = taxable + cgst + sgst;
+            }
+
+            row.querySelector('.taxable-val').innerText = taxable.toFixed(2);
+            row.querySelector('.row-total').innerText = total.toFixed(2);
+            subTotal += taxable;
+        });
+
+        let totalCgst = subTotal * 0.09;
+        let totalSgst = subTotal * 0.09;
+        let grandTotal = subTotal + totalCgst + totalSgst;
+
+        document.getElementById('subTotal').innerText = subTotal.toFixed(2);
+        document.getElementById('cgstTotal').innerText = totalCgst.toFixed(2);
+        document.getElementById('sgstTotal').innerText = totalSgst.toFixed(2);
+        document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+    }
+
+    window.onload = function() {
+        addItemRow();
+        populateCustomerDropdown();
+    }
 </script>
 
 </body>
