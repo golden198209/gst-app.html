@@ -155,6 +155,8 @@
         .btn:hover { background-color: #0056b3; }
         .btn-success { background-color: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;}
         .btn-info { background-color: #17a2b8; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;}
+        .btn-whatsapp { background-color: #25d366; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-email { background-color: #ea4335; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         .btn-danger { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;}
         .settings-bar {
             background: #e9ecef;
@@ -227,8 +229,13 @@
             <table class="split-table">
                 <tr>
                     <td>
-                        <strong>Bill To:</strong><br>
-                        <select id="customerSelect" class="input-field" onchange="loadCustomerDetails()" style="margin-top: 4px;">
+                        <strong>Bill To (Customer GSTIN Auto-fill):</strong><br>
+                        <label style="font-size:10px; color:#555;">Customer GSTIN:</label>
+                        <input type="text" id="custGstinInput" class="input-field" list="gstinList" placeholder="Type or select GSTIN" oninput="onGstinInput()" style="margin-bottom:4px;">
+                        <datalist id="gstinList"></datalist>
+
+                        <label style="font-size:10px; color:#555;">Or Choose Customer Name:</label>
+                        <select id="customerSelect" class="input-field" onchange="loadCustomerDetails()" style="margin-top: 2px;">
                             <option value="">-- Choose Customer --</option>
                         </select>
                         <div id="customerInfo" class="sub-text" style="margin-top: 4px;"></div>
@@ -347,10 +354,12 @@
             </table>
 
             <!-- Action Buttons -->
-            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-                <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 2;">Save & Print Invoice</button>
-                <button class="btn-info" onclick="downloadOrSharePDF()" style="flex: 2;">📥 Download / Share PDF</button>
-                <button class="btn" onclick="resetInvoiceForm()" style="flex: 1; background-color: #6c757d;">Clear Form</button>
+            <div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;" class="no-print">
+                <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 1;">Save & Print</button>
+                <button class="btn-info" onclick="downloadOrSharePDF()" style="flex: 1;">📥 PDF Download</button>
+                <button class="btn-whatsapp" onclick="shareOnWhatsApp()" style="flex: 1;">📱 Share WhatsApp</button>
+                <button class="btn-email" onclick="shareViaEmail()" style="flex: 1;">✉️ Share Email</button>
+                <button class="btn" onclick="resetInvoiceForm()" style="flex: 0.7; background-color: #6c757d;">Clear</button>
             </div>
         </div>
     </div>
@@ -712,26 +721,54 @@
         return num.toLocaleString('en-IN') + " Rupees Only";
     }
 
+    function populateCustomerDropdown() {
+        let select = document.getElementById('customerSelect');
+        let datalist = document.getElementById('gstinList');
+        select.innerHTML = '<option value="">-- Choose Customer --</option>';
+        datalist.innerHTML = '';
+
+        customers.forEach((c, idx) => {
+            select.innerHTML += `<option value="${idx}">${c.name} (${c.gstin || 'No GSTIN'})</option>`;
+            if(c.gstin) {
+                datalist.innerHTML += `<option value="${c.gstin}">${c.name}</option>`;
+            }
+        });
+    }
+
     function loadCustomerDetails() {
         let idx = document.getElementById('customerSelect').value;
-        if(idx === "") { document.getElementById('customerInfo').innerHTML = ""; return; }
+        if(idx === "") { 
+            document.getElementById('customerInfo').innerHTML = ""; 
+            document.getElementById('custGstinInput').value = "";
+            return; 
+        }
         let c = customers[idx];
+        document.getElementById('custGstinInput').value = c.gstin || "";
         document.getElementById('customerInfo').innerHTML = `<strong>${c.name}</strong><br>${c.address}<br><strong>GSTIN:</strong> ${c.gstin || 'Unregistered'}<br><strong>State:</strong> 01-Jammu & Kashmir`;
     }
 
-    function populateCustomerDropdown() {
-        let select = document.getElementById('customerSelect');
-        select.innerHTML = '<option value="">-- Choose Customer --</option>';
-        customers.forEach((c, idx) => {
-            select.innerHTML += `<option value="${idx}">${c.name}</option>`;
-        });
+    function onGstinInput() {
+        let gstinVal = document.getElementById('custGstinInput').value.trim();
+        let foundCust = customers.find(c => c.gstin && c.gstin.toLowerCase() === gstinVal.toLowerCase());
+        if(foundCust) {
+            let idx = customers.indexOf(foundCust);
+            document.getElementById('customerSelect').value = idx;
+            document.getElementById('customerInfo').innerHTML = `<strong>${foundCust.name}</strong><br>${foundCust.address}<br><strong>GSTIN:</strong> ${foundCust.gstin}<br><strong>State:</strong> 01-Jammu & Kashmir`;
+        } else {
+            document.getElementById('customerSelect').value = "";
+            if(gstinVal.length > 5) {
+                document.getElementById('customerInfo').innerHTML = `<strong>New Customer / Unregistered</strong><br>GSTIN: ${gstinVal}`;
+            } else {
+                document.getElementById('customerInfo').innerHTML = "";
+            }
+        }
     }
 
     function renderCustomerList() {
         let list = document.getElementById('customerList');
         list.innerHTML = '';
         customers.forEach((c, idx) => {
-            list.innerHTML += `<li><b>${c.name}</b> - ${c.address} <button onclick="customers.splice(${idx},1); localStorage.setItem('gs_customers', JSON.stringify(customers)); populateCustomerDropdown(); renderCustomerList();" class="btn-danger" style="padding:1px 4px; font-size:10px;">X</button></li>`;
+            list.innerHTML += `<li><b>${c.name}</b> [GSTIN: ${c.gstin || 'N/A'}] - ${c.address} <button onclick="customers.splice(${idx},1); localStorage.setItem('gs_customers', JSON.stringify(customers)); populateCustomerDropdown(); renderCustomerList();" class="btn-danger" style="padding:1px 4px; font-size:10px;">X</button></li>`;
         });
     }
 
@@ -744,6 +781,44 @@
         processInvoiceSave();
         alert("Tip: Print popup mein 'Save as PDF' select karke PDF download karein.");
         window.print();
+    }
+
+    function getInvoiceTextSummary() {
+        let firmIdx = document.getElementById('activeFirmSelect').value;
+        let firm = companies[firmIdx] || companies[0];
+        let invNo = document.getElementById('invNumber').value;
+        let invDate = document.getElementById('invDate').value;
+        let custInfoText = document.getElementById('customerInfo').innerText || "Walk-in Customer";
+        let grandTotal = document.getElementById('grandTotal').innerText;
+        let balance = document.getElementById('balanceAmount').innerText;
+
+        let text = `*TAX INVOICE* %0A` +
+                   `Firm: *${firm.name}*%0A` +
+                   `Invoice No: ${invNo}%0A` +
+                   `Date: ${invDate}%0A%0A` +
+                   `*Bill To:*%0A${custInfoText}%0A%0A` +
+                   `*Total Amount:* ${grandTotal}%0A` +
+                   `*Balance Due:* ${balance}%0A%0A` +
+                   `Thank you for business with us!`;
+        return text;
+    }
+
+    function shareOnWhatsApp() {
+        processInvoiceSave();
+        let text = getInvoiceTextSummary();
+        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    }
+
+    function shareViaEmail() {
+        processInvoiceSave();
+        let firmIdx = document.getElementById('activeFirmSelect').value;
+        let firm = companies[firmIdx] || companies[0];
+        let invNo = document.getElementById('invNumber').value;
+        let grandTotal = document.getElementById('grandTotal').innerText;
+        
+        let subject = encodeURIComponent(`Tax Invoice #${invNo} from ${firm.name}`);
+        let body = encodeURIComponent(`Dear Customer,\n\nPlease find your tax invoice details below:\n\nInvoice No: ${invNo}\nTotal Amount: ${grandTotal}\n\nThank you,\n${firm.name}`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 
     function processInvoiceSave() {
@@ -856,6 +931,9 @@
         document.getElementById('itemRows').innerHTML = '';
         addItemRow();
         document.getElementById('amtReceived').value = 0;
+        document.getElementById('custGstinInput').value = '';
+        document.getElementById('customerSelect').value = '';
+        document.getElementById('customerInfo').innerHTML = '';
         calculateTotals();
     }
 </script>
