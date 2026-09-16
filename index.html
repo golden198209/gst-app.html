@@ -788,18 +788,37 @@
         let firm = companies[firmIdx] || companies[0];
         let invNo = document.getElementById('invNumber').value;
         let invDate = document.getElementById('invDate').value;
-        let custInfoText = document.getElementById('customerInfo').innerText || "Walk-in Customer";
+        let custText = document.getElementById('customerInfo').innerText.replace(/\n/g, ' - ') || "Walk-in Customer";
         let grandTotal = document.getElementById('grandTotal').innerText;
         let balance = document.getElementById('balanceAmount').innerText;
 
+        let itemsText = "";
+        let rows = document.querySelectorAll('#itemRows tr');
+        let count = 1;
+        rows.forEach(row => {
+            let nameInput = row.querySelector('.prod-name-input');
+            if(nameInput && nameInput.value.trim() !== "") {
+                let itemName = nameInput.value;
+                let qty = row.querySelector('.qty').value;
+                let unit = row.querySelector('.unit').value;
+                let tot = row.querySelector('.row-total').innerText;
+                itemsText += `${count}. ${itemName} (${qty} ${unit}) - ${tot}%0A`;
+                count++;
+            }
+        });
+
         let text = `*TAX INVOICE* %0A` +
-                   `Firm: *${firm.name}*%0A` +
-                   `Invoice No: ${invNo}%0A` +
-                   `Date: ${invDate}%0A%0A` +
-                   `*Bill To:*%0A${custInfoText}%0A%0A` +
-                   `*Total Amount:* ${grandTotal}%0A` +
-                   `*Balance Due:* ${balance}%0A%0A` +
-                   `Thank you for business with us!`;
+                   `🏢 *${firm.name}*%0A` +
+                   `--------------------------------%0A` +
+                   `📄 *Inv No:* ${invNo} | *Date:* ${invDate}%0A` +
+                   `👤 *Bill To:* ${custText}%0A` +
+                   `--------------------------------%0A` +
+                   `📦 *Items:*%0A` + itemsText +
+                   `--------------------------------%0A` +
+                   `💰 *Grand Total:* *${grandTotal}*%0A` +
+                   `🔴 *Balance Due:* ${balance}%0A` +
+                   `--------------------------------%0A` +
+                   `🙏 Thank you for your business!`;
         return text;
     }
 
