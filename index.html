@@ -351,7 +351,9 @@
         { name: "PRINCIPAL KV1, SRINAGAR", address: "POST BATWARA, SHIV PORA MOD, Srinagar - 190004", phone: "7006688390", gstin: "" }
     ];
     let inventory = JSON.parse(localStorage.getItem('gs_inventory')) || [
-        { name: "BI PAINTS Epoxy Paints Marine Paints, size 1 lt", hsn: "3209", price: 294.92, stock: 50 }
+        { name: "BI PAINTS Epoxy Paints Marine Paints, size 1 lt", hsn: "3209", price: 294.92, stock: 50 },
+        { name: "Wooden Chair", hsn: "9403", price: 1500, stock: 20 },
+        { name: "Football", hsn: "9506", price: 600, stock: 30 }
     ];
 
     function switchTab(tab, event) {
@@ -511,7 +513,7 @@
                 <select class="input-field product-select" onchange="selectInventoryItem(this)">
                     ${optionsHtml}
                 </select>
-                <input type="text" class="input-field prod-name-input" value="" placeholder="Or type product name" style="margin-top:3px;">
+                <input type="text" class="input-field prod-name-input" value="" placeholder="Or type product name" oninput="autoDetectHSN(this)" style="margin-top:3px;">
             </td>
             <td><input type="text" class="input-field hsn" value="" style="width: 60px;"></td>
             <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 50px;"></td>
@@ -533,6 +535,23 @@
         tr.querySelector('.hsn').value = p.hsn;
         tr.querySelector('.rate').value = p.price;
         calculateTotals();
+    }
+
+    // Smart HSN Auto-Detect Dictionary based on keywords
+    function autoDetectHSN(inputElem) {
+        let name = inputElem.value.toLowerCase();
+        let tr = inputElem.closest('tr');
+        let hsnField = tr.querySelector('.hsn');
+
+        if(name.includes('chair') || name.includes('table') || name.includes('furniture') || name.includes('cabinet')) {
+            hsnField.value = "9403";
+        } else if(name.includes('paint') || name.includes('varnish') || name.includes('epoxy')) {
+            hsnField.value = "3209";
+        } else if(name.includes('football') || name.includes('toy') || name.includes('game')) {
+            hsnField.value = "9506";
+        } else if(name.includes('wood') || name.includes('plywood')) {
+            hsnField.value = "4410";
+        }
     }
 
     function calculateTotals() {
