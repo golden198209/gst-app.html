@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS & Tax Invoice - Multi-Company</title>
+    <title>POS & Tax Invoice - Multi-Firm Auto Invoice</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -161,7 +161,7 @@
         <button class="tab-btn active" onclick="switchTab('invoice', event)">Create Invoice</button>
         <button class="tab-btn" onclick="switchTab('history', event)">Invoice History & Sales</button>
         <button class="tab-btn" onclick="switchTab('ledger', event)">Kisse Lena Hai (Ledger)</button>
-        <button class="tab-btn" onclick="switchTab('business', event)">Business Profiles (Multi-Company)</button>
+        <button class="tab-btn" onclick="switchTab('business', event)">Manage Firms (Multi-Company)</button>
         <button class="tab-btn" onclick="switchTab('customers', event)">Customers</button>
         <button class="tab-btn" onclick="switchTab('inventory', event)">Stock</button>
     </div>
@@ -176,10 +176,10 @@
     <!-- 1. INVOICE PANEL -->
     <div id="invoicePanel" class="panel active">
         <div class="invoice-box">
-            <!-- Multi-Company Selector Header Bar -->
-            <div class="box-section no-print" style="margin-bottom: 15px; background: #fff8f8;">
-                <label><strong>Select Billing Company (Sender):</strong></label>
-                <select id="activeCompanySelect" class="input-field" onchange="loadSelectedCompanyToInvoice()">
+            <!-- Firm Selector Header Bar -->
+            <div class="box-section no-print" style="margin-bottom: 15px; background: #fff8f8; border: 1px dashed #b30000;">
+                <label><strong>Select Billing Firm (Company):</strong></label>
+                <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()" style="font-weight: bold; color: #b30000;">
                     <!-- Populated via JS -->
                 </select>
             </div>
@@ -187,14 +187,14 @@
             <table class="header-table">
                 <tr>
                     <td>
-                        <div class="company-title" id="lblCompanyName">Company Name</div>
+                        <div class="company-title" id="lblCompanyName">Firm Name</div>
                         <div class="sub-text" id="lblCompanyDetails"></div>
                     </td>
                     <td>
                         <div class="invoice-title">TAX INVOICE</div>
                         <div class="sub-text" style="text-align: right; margin-top: 5px;">
                             ORIGINAL FOR RECIPIENT<br>
-                            <strong>Invoice No:</strong> <input type="text" id="invNumber" class="input-field" value="GS/2026-27/01" style="width: 120px; text-align: right;"><br>
+                            <strong>Invoice No:</strong> <input type="text" id="invNumber" class="input-field" value="" style="width: 140px; text-align: right; font-weight: bold;"><br>
                             <strong>Invoice Date:</strong> <input type="date" class="input-field" id="invDate" style="width: 130px; text-align: right;">
                         </div>
                     </td>
@@ -295,7 +295,7 @@
         <table class="items-table">
             <thead>
                 <tr>
-                    <th>Company</th>
+                    <th>Firm / Company</th>
                     <th>Inv No.</th>
                     <th>Date</th>
                     <th>Customer Name</th>
@@ -318,7 +318,7 @@
                 <tr>
                     <th>Customer Name</th>
                     <th>Phone</th>
-                    <th>Company</th>
+                    <th>Firm Name</th>
                     <th>Invoice No.</th>
                     <th>Pending Amount (₹)</th>
                     <th>Action</th>
@@ -330,12 +330,14 @@
 
     <!-- 4. BUSINESS PROFILES (MULTI-COMPANY PANEL) -->
     <div id="businessPanel" class="panel">
-        <h3>Multi-Company Profile Management</h3>
+        <h3>Firm / Company Management</h3>
         <div class="box-section" style="background: #f9f9f9;">
-            <h4 id="formTitle">Add New Company / Business</h4>
+            <h4 id="formTitle">Add New Firm</h4>
             <input type="hidden" id="editCompanyIdx" value="-1">
-            <label><strong>Company Name:</strong></label>
-            <input type="text" id="busName" class="input-field" placeholder="e.g. Golden Star Furniture and Interior">
+            <label><strong>Firm / Company Name:</strong></label>
+            <input type="text" id="busName" class="input-field" placeholder="e.g. Golden Star Furniture or Clapsmile">
+            <label><strong>Prefix (e.g. GS, CL, GSF):</strong></label>
+            <input type="text" id="busPrefix" class="input-field" placeholder="Bill prefix for auto numbering (e.g. GS)">
             <label><strong>Business Address:</strong></label>
             <textarea id="busAddress" class="input-field" placeholder="Full address"></textarea>
             <label><strong>GSTIN Number:</strong></label>
@@ -354,18 +356,18 @@
             <input type="text" id="bankIfsc" class="input-field">
             
             <div style="margin-top: 10px; display: flex; gap: 10px;">
-                <button class="btn" onclick="saveBusinessProfile()">Save Company</button>
+                <button class="btn" onclick="saveBusinessProfile()">Save Firm Profile</button>
                 <button class="btn" onclick="clearCompanyForm()" style="background-color: #6c757d;">Cancel / Clear</button>
             </div>
         </div>
 
-        <h4 style="margin-top: 25px;">Registered Companies List</h4>
+        <h4 style="margin-top: 25px;">Registered Firms List</h4>
         <table class="items-table">
             <thead>
                 <tr>
-                    <th>Company Name</th>
+                    <th>Firm Name & Prefix</th>
                     <th>GSTIN</th>
-                    <th>Bank / Acc No</th>
+                    <th>Bank Details</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -416,10 +418,11 @@
 </div>
 
 <script>
-    // Multi-Company initial dataset (Defaults to your primary businesses)
+    // Firms Dataset with Prefixes for Auto-Invoice Generation
     let companies = JSON.parse(localStorage.getItem('gs_companies')) || [
         {
             name: "Golden Star Furniture and Interior",
+            prefix: "GS",
             address: "X Change Road, Lalchowk, Srinagar, J&K - 190008",
             gstin: "01EBWPS3295G1Z4",
             bankName: "Jammu and Kashmir Bank",
@@ -430,8 +433,9 @@
         },
         {
             name: "Clapsmile",
+            prefix: "CS",
             address: "Srinagar, Jammu and Kashmir",
-            gstin: "Pending/Unregistered",
+            gstin: "Unregistered",
             bankName: "Jammu and Kashmir Bank",
             branch: "Main Branch",
             accName: "Clapsmile",
@@ -450,8 +454,8 @@
     let invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
 
     document.getElementById('invDate').valueAsDate = new Date();
-    populateCompanyDropdowns();
-    loadSelectedCompanyToInvoice();
+    populateFirmDropdowns();
+    onFirmChange();
     populateCustomerDropdown();
 
     function switchTab(tab, event) {
@@ -484,22 +488,34 @@
         }
     }
 
-    function populateCompanyDropdowns() {
-        let select = document.getElementById('activeCompanySelect');
+    function populateFirmDropdowns() {
+        let select = document.getElementById('activeFirmSelect');
         select.innerHTML = '';
         companies.forEach((comp, idx) => {
-            select.innerHTML += `<option value="${idx}">${comp.name} (${comp.gstin})</option>`;
+            select.innerHTML += `<option value="${idx}">${comp.name} [Prefix: ${comp.prefix || 'INV'}]</option>`;
         });
     }
 
-    function loadSelectedCompanyToInvoice() {
-        let idx = document.getElementById('activeCompanySelect').value;
+    function onFirmChange() {
+        let idx = document.getElementById('activeFirmSelect').value;
         if(idx === "" || !companies[idx]) idx = 0;
         let c = companies[idx];
         
+        // Update header details
         document.getElementById('lblCompanyName').innerText = c.name;
         document.getElementById('lblCompanyDetails').innerHTML = `${c.address.replace(/\n/g, '<br>')}<br><strong>GSTIN:</strong> ${c.gstin}`;
         document.getElementById('lblBankDetails').innerHTML = `<strong>Bank Details (${c.name}):</strong><br>${c.bankName} | ${c.branch}<br>Acc Name: ${c.accName}<br>Acc No: ${c.accNo} | IFSC: ${c.ifsc}`;
+
+        // Auto-generate next invoice number for this specific firm
+        generateNextInvoiceNumber(c.prefix || 'INV');
+    }
+
+    function generateNextInvoiceNumber(prefix) {
+        let currentYear = "2026-27"; // or dynamic
+        let firmInvoices = invoices.filter(inv => inv.companyPrefix === prefix || (inv.id && inv.id.startsWith(prefix)));
+        let nextNum = firmInvoices.length + 1;
+        let paddedNum = String(nextNum).padStart(2, '0');
+        document.getElementById('invNumber').value = `${prefix}/${currentYear}/${paddedNum}`;
     }
 
     function renderCompanyTable() {
@@ -508,7 +524,7 @@
         companies.forEach((c, idx) => {
             tbody.innerHTML += `
                 <tr>
-                    <td><b>${c.name}</b><br><small>${c.address}</small></td>
+                    <td><b>${c.name}</b><br><small>Prefix: <b>${c.prefix || 'INV'}</b> | ${c.address}</small></td>
                     <td>${c.gstin}</td>
                     <td>${c.bankName} - ${c.accNo}</td>
                     <td>
@@ -523,6 +539,7 @@
         let idx = parseInt(document.getElementById('editCompanyIdx').value);
         let newComp = {
             name: document.getElementById('busName').value.trim(),
+            prefix: document.getElementById('busPrefix').value.trim().toUpperCase() || 'INV',
             address: document.getElementById('busAddress').value.trim(),
             gstin: document.getElementById('busGstin').value.trim(),
             bankName: document.getElementById('bankName').value.trim(),
@@ -532,7 +549,7 @@
             ifsc: document.getElementById('bankIfsc').value.trim()
         };
 
-        if(!newComp.name) { alert("Please enter company name"); return; }
+        if(!newComp.name) { alert("Please enter firm name"); return; }
 
         if(idx === -1) {
             companies.push(newComp);
@@ -541,18 +558,19 @@
         }
 
         localStorage.setItem('gs_companies', JSON.stringify(companies));
-        alert("Company profile saved successfully!");
+        alert("Firm profile saved successfully!");
         clearCompanyForm();
-        populateCompanyDropdowns();
+        populateFirmDropdowns();
         renderCompanyTable();
-        loadSelectedCompanyToInvoice();
+        onFirmChange();
     }
 
     function editCompany(idx) {
         let c = companies[idx];
         document.getElementById('editCompanyIdx').value = idx;
-        document.getElementById('formTitle').innerText = "Edit Company: " + c.name;
+        document.getElementById('formTitle').innerText = "Edit Firm: " + c.name;
         document.getElementById('busName').value = c.name;
+        document.getElementById('busPrefix').value = c.prefix || '';
         document.getElementById('busAddress').value = c.address;
         document.getElementById('busGstin').value = c.gstin;
         document.getElementById('bankName').value = c.bankName;
@@ -564,8 +582,9 @@
 
     function clearCompanyForm() {
         document.getElementById('editCompanyIdx').value = -1;
-        document.getElementById('formTitle').innerText = "Add New Company / Business";
+        document.getElementById('formTitle').innerText = "Add New Firm";
         document.getElementById('busName').value = '';
+        document.getElementById('busPrefix').value = '';
         document.getElementById('busAddress').value = '';
         document.getElementById('busGstin').value = '';
         document.getElementById('bankName').value = '';
@@ -576,12 +595,12 @@
     }
 
     function deleteCompany(idx) {
-        if(confirm("Are you sure you want to delete this company profile?")) {
+        if(confirm("Are you sure you want to delete this firm profile?")) {
             companies.splice(idx, 1);
             localStorage.setItem('gs_companies', JSON.stringify(companies));
-            populateCompanyDropdowns();
+            populateFirmDropdowns();
             renderCompanyTable();
-            loadSelectedCompanyToInvoice();
+            onFirmChange();
         }
     }
 
@@ -765,8 +784,8 @@
     }
 
     function saveAndPrintInvoice() {
-        let compIdx = document.getElementById('activeCompanySelect').value;
-        let compName = companies[compIdx] ? companies[compIdx].name : "Primary Company";
+        let firmIdx = document.getElementById('activeFirmSelect').value;
+        let firm = companies[firmIdx] || companies[0];
         let invNo = document.getElementById('invNumber').value;
         let invDate = document.getElementById('invDate').value;
         let custIdx = document.getElementById('customerSelect').value;
@@ -781,7 +800,8 @@
         }
 
         let newInvoice = {
-            company: compName,
+            company: firm.name,
+            companyPrefix: firm.prefix || 'INV',
             id: invNo,
             date: invDate,
             customer: custName,
@@ -794,6 +814,10 @@
         localStorage.setItem('gs_invoices', JSON.stringify(invoices));
         alert("Invoice saved successfully!");
         window.print();
+
+        // Refresh invoice number for next bill automatically
+        onFirmChange();
+        resetInvoiceForm();
     }
 
     function resetInvoiceForm() {
@@ -823,7 +847,7 @@
 
             tbody.innerHTML += `
                 <tr>
-                    <td><small>${inv.company || '-'}</small></td>
+                    <td><small><b>${inv.company || '-'}</b></small></td>
                     <td>${inv.id}</td>
                     <td>${inv.date}</td>
                     <td>${inv.customer}</td>
@@ -845,6 +869,7 @@
             invoices.splice(idx, 1);
             localStorage.setItem('gs_invoices', JSON.stringify(invoices));
             renderInvoiceHistory();
+            onFirmChange();
         }
     }
 
