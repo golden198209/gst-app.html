@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tax Invoice - Golden Square Style</title>
+    <title>Tax Invoice - Multi Company & Tax Summary</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -174,7 +174,7 @@
 <body>
 
 <div class="container">
-    <!-- Navigation Tabs -->
+    <!-- Navigation Tabs (Multi-company & all features included) -->
     <div class="tab-buttons no-print">
         <button class="tab-btn active" onclick="switchTab('invoice', event)">Create Invoice</button>
         <button class="tab-btn" onclick="switchTab('history', event)">Invoice History</button>
@@ -267,7 +267,7 @@
             </table>
             <button class="btn no-print" onclick="addItemRow()" style="margin-top: 5px; padding: 4px 10px; font-size: 12px;">+ Add Item</button>
 
-            <!-- Tax Summary & Totals Section matching image format -->
+            <!-- Tax Summary & Totals Section -->
             <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
                 <tr>
                     <!-- Left: Tax Summary Table -->
@@ -289,9 +289,7 @@
                                     <th>Amt (₹)</th>
                                 </tr>
                             </thead>
-                            <tbody id="taxSummaryRows">
-                                <!-- Dynamic HSN breakdown -->
-                            </tbody>
+                            <tbody id="taxSummaryRows"></tbody>
                         </table>
                     </td>
                     
@@ -345,7 +343,7 @@
                 </tr>
             </table>
 
-            <!-- Print & Share Action Buttons -->
+            <!-- Action Buttons -->
             <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
                 <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 2;">Save & Print Invoice</button>
                 <button class="btn-info" onclick="downloadOrSharePDF()" style="flex: 2;">📥 Download / Share PDF</button>
@@ -390,16 +388,16 @@
         </table>
     </div>
 
-    <!-- 4. BUSINESS PROFILES PANEL -->
+    <!-- 4. BUSINESS PROFILES PANEL (MULTI-COMPANY MANAGEMENT) -->
     <div id="businessPanel" class="panel">
-        <h3>Firm Management</h3>
+        <h3>Manage Firms (Multi-Company)</h3>
         <div class="box-section">
             <h4 id="formTitle">Add New Firm</h4>
             <input type="hidden" id="editCompanyIdx" value="-1">
             <label>Firm Name:</label>
-            <input type="text" id="busName" class="input-field" placeholder="e.g. Golden Square & Co.">
+            <input type="text" id="busName" class="input-field" placeholder="e.g. Golden Star Furniture and Interior">
             <label>Prefix:</label>
-            <input type="text" id="busPrefix" class="input-field" placeholder="e.g. GS">
+            <input type="text" id="busPrefix" class="input-field" placeholder="e.g. GSF">
             <label>Address:</label>
             <textarea id="busAddress" class="input-field"></textarea>
             <label>Phone:</label>
@@ -478,6 +476,26 @@
             bankName: "Jammu And Kashmir Bank Limited, Amira Kadal Srinagar",
             accNo: "0002010100008509",
             ifsc: "JAKAOSQUARE"
+        },
+        {
+            name: "Golden Star Furniture and Interior",
+            prefix: "GSF",
+            address: "Srinagar, Jammu and Kashmir",
+            phone: "",
+            gstin: "",
+            bankName: "Jammu And Kashmir Bank Limited",
+            accNo: "",
+            ifsc: ""
+        },
+        {
+            name: "Clapsmile",
+            prefix: "CS",
+            address: "Srinagar, Jammu and Kashmir",
+            phone: "",
+            gstin: "",
+            bankName: "Jammu And Kashmir Bank Limited",
+            accNo: "",
+            ifsc: ""
         }
     ];
 
@@ -494,6 +512,7 @@
     populateFirmDropdowns();
     onFirmChange();
     populateCustomerDropdown();
+    addItemRow(); // Default initial row
 
     function switchTab(tab, event) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -524,6 +543,48 @@
         document.getElementById('lblSignCompanyName').innerText = `For ${c.name} .:`;
         document.getElementById('lblCompanyDetails').innerHTML = `${c.address}<br><strong>Phone:</strong> ${c.phone} &nbsp;&nbsp;&nbsp;&nbsp; <strong>GSTIN:</strong> ${c.gstin}<br><strong>State:</strong> 01-Jammu & Kashmir`;
         document.getElementById('lblBankDetails').innerHTML = `Name: ${c.bankName}<br>Account No.: ${c.accNo}<br>IFSC code: ${c.ifsc}<br>Account Holder's Name: ${c.name}`;
+    }
+
+    function saveBusinessProfile() {
+        let name = document.getElementById('busName').value.trim();
+        let prefix = document.getElementById('busPrefix').value.trim();
+        let address = document.getElementById('busAddress').value.trim();
+        let phone = document.getElementById('busPhone').value.trim();
+        let gstin = document.getElementById('busGstin').value.trim();
+        let bankName = document.getElementById('bankName').value.trim();
+        let accNo = document.getElementById('bankAccNo').value.trim();
+        let ifsc = document.getElementById('bankIfsc').value.trim();
+        
+        if(!name) { alert("Firm name is required!"); return; }
+
+        companies.push({ name, prefix, address, phone, gstin, bankName, accNo, ifsc });
+        localStorage.setItem('gs_companies', JSON.stringify(companies));
+        populateFirmDropdowns();
+        renderCompanyTable();
+        alert("Firm saved successfully!");
+        
+        // Reset form
+        document.getElementById('busName').value = '';
+        document.getElementById('busPrefix').value = '';
+        document.getElementById('busAddress').value = '';
+        document.getElementById('busPhone').value = '';
+        document.getElementById('busGstin').value = '';
+        document.getElementById('bankName').value = '';
+        document.getElementById('bankAccNo').value = '';
+        document.getElementById('bankIfsc').value = '';
+    }
+
+    function renderCompanyTable() {
+        let tbody = document.getElementById('companyTableBody');
+        tbody.innerHTML = '';
+        companies.forEach((c, idx) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${c.name}</b><br><small>${c.address}</small></td>
+                    <td>${c.gstin || 'N/A'}</td>
+                    <td><button onclick="companies.splice(${idx},1); localStorage.setItem('gs_companies', JSON.stringify(companies)); populateFirmDropdowns(); renderCompanyTable();" class="btn-danger" style="padding:2px 5px;">Delete</button></td>
+                </tr>`;
+        });
     }
 
     function addItemRow() {
@@ -677,6 +738,14 @@
         });
     }
 
+    function renderCustomerList() {
+        let list = document.getElementById('customerList');
+        list.innerHTML = '';
+        customers.forEach((c, idx) => {
+            list.innerHTML += `<li><b>${c.name}</b> - ${c.address} <button onclick="customers.splice(${idx},1); localStorage.setItem('gs_customers', JSON.stringify(customers)); populateCustomerDropdown(); renderCustomerList();" class="btn-danger" style="padding:1px 4px; font-size:10px;">X</button></li>`;
+        });
+    }
+
     function saveAndPrintInvoice() {
         processInvoiceSave();
         window.print();
@@ -770,6 +839,7 @@
         customers.push({name, address, phone, gstin});
         localStorage.setItem('gs_customers', JSON.stringify(customers));
         populateCustomerDropdown();
+        renderCustomerList();
         alert("Customer saved!");
     }
 
@@ -791,6 +861,13 @@
         inventory.forEach((p, idx) => {
             tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.stock}</td><td><button onclick="inventory.splice(${idx},1); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
         });
+    }
+
+    function resetInvoiceForm() {
+        document.getElementById('itemRows').innerHTML = '';
+        addItemRow();
+        document.getElementById('amtReceived').value = 0;
+        calculateTotals();
     }
 </script>
 
