@@ -391,7 +391,7 @@
         </table>
     </div>
 
-    <!-- 4. BUSINESS PROFILES PANEL (MANUAL FIRM ENTRY) -->
+    <!-- 4. BUSINESS PROFILES PANEL -->
     <div id="businessPanel" class="panel">
         <h3>Manage Firms (Apni Firm ki Detail Bhariye)</h3>
         <div class="box-section">
@@ -555,7 +555,6 @@
         renderCompanyTable();
         alert("Firm successfully save ho gayi hai!");
         
-        // Clear input fields
         document.getElementById('busName').value = '';
         document.getElementById('busPrefix').value = '';
         document.getElementById('busAddress').value = '';
@@ -584,16 +583,17 @@
         let rowCount = tbody.rows.length + 1;
         let tr = document.createElement('tr');
         
-        let optionsHtml = '<option value="">Select Item</option>';
-        inventory.forEach((p, i) => {
-            optionsHtml += `<option value="${i}">${p.name}</option>`;
+        let datalistId = 'inv_list_' + Math.random().toString(36).substring(2, 7);
+        let optionsHtml = '';
+        inventory.forEach(p => {
+            optionsHtml += `<option value="${p.name}">`;
         });
 
         tr.innerHTML = `
             <td>${rowCount}</td>
             <td class="left">
-                <select class="input-field" onchange="selectInventoryItem(this)" style="margin-bottom:2px;">${optionsHtml}</select>
-                <input type="text" class="input-field prod-name-input" placeholder="Item name" style="margin-bottom:0;">
+                <input type="text" class="input-field prod-name-input" list="${datalistId}" placeholder="Type or select item" onchange="onItemNameSelected(this)" style="margin-bottom:0;">
+                <datalist id="${datalistId}">${optionsHtml}</datalist>
             </td>
             <td><input type="text" class="input-field hsn" value="9403" style="width: 55px; margin-bottom:0;"></td>
             <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 45px; margin-bottom:0;"></td>
@@ -613,15 +613,15 @@
         tbody.appendChild(tr);
     }
 
-    function selectInventoryItem(selectElem) {
-        let idx = selectElem.value;
-        if(idx === "") return;
-        let p = inventory[idx];
-        let tr = selectElem.closest('tr');
-        tr.querySelector('.prod-name-input').value = p.name;
-        tr.querySelector('.hsn').value = p.hsn;
-        tr.querySelector('.rate').value = p.price;
-        calculateTotals();
+    function onItemNameSelected(inputElem) {
+        let val = inputElem.value;
+        let p = inventory.find(item => item.name === val);
+        if(p) {
+            let tr = inputElem.closest('tr');
+            tr.querySelector('.hsn').value = p.hsn;
+            tr.querySelector('.rate').value = p.price;
+            calculateTotals();
+        }
     }
 
     function calculateTotals() {
