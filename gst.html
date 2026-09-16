@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST Billing & Invoice App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            background: #fff;
+            margin: auto;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+        .row .form-group {
+            flex: 1;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .total-section {
+            margin-top: 20px;
+            text-align: right;
+            font-size: 18px;
+        }
+        .print-btn {
+            background-color: #28a745;
+            margin-top: 20px;
+        }
+        .print-btn:hover {
+            background-color: #218838;
+        }
+        @media print {
+            body {
+                background-color: #fff;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            button, .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>GST Invoice Generator</h2>
+    
+    <!-- Customer & Business Details -->
+    <div class="row no-print">
+        <div class="form-group">
+            <label>Customer Name:</label>
+            <input type="text" id="custName" placeholder="Enter customer name">
+        </div>
+        <div class="form-group">
+            <label>Customer GSTIN:</label>
+            <input type="text" id="custGstin" placeholder="Optional (e.g. 22AAAAA0000A1Z5)">
+        </div>
+    </div>
+
+    <hr class="no-print">
+
+    <!-- Add Item Section -->
+    <div class="no-print">
+        <h3>Add Product / Service</h3>
+        <div class="row">
+            <div class="form-group">
+                <label>Item Name:</label>
+                <input type="text" id="itemName" placeholder="Product name">
+            </div>
+            <div class="form-group">
+                <label>Price (₹):</label>
+                <input type="number" id="itemPrice" placeholder="0.00">
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>Quantity:</label>
+                <input type="number" id="itemQty" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label>GST Rate (%):</label>
+                <select id="gstRate">
+                    <option value="5">5% (CGST 2.5% + SGST 2.5%)</option>
+                    <option value="12">12% (CGST 6% + SGST 6%)</option>
+                    <option value="18" selected>18% (CGST 9% + SGST 9%)</option>
+                    <option value="28">28% (CGST 14% + SGST 14%)</option>
+                </select>
+            </div>
+        </div>
+        <button onclick="addItem()">Add Item to Bill</button>
+    </div>
+
+    <h3>Invoice Details</h3>
+    <p><strong>Customer:</strong> <span id="displayCustName">Walk-in Customer</span></p>
+    <p><strong>GSTIN:</strong> <span id="displayCustGstin">-</span></p>
+
+    <!-- Invoice Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>GST %</th>
+                <th>Total (Incl. GST)</th>
+                <th class="no-print">Action</th>
+            </tr>
+        </thead>
+        <tbody id="invoiceTableBody">
+            <!-- Items will be added here dynamically -->
+        </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="total-section">
+        <p>Subtotal: ₹<span id="subTotal">0.00</span></p>
+        <p>Total GST: ₹<span id="totalGst">0.00</span></p>
+        <h3>Grand Total: ₹<span id="grandTotal">0.00</span></h3>
+    </div>
+
+    <button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<script>
+    let cart = [];
+
+    // Update customer details live
+    document.getElementById('custName').addEventListener('input', function() {
+        document.getElementById('displayCustName').innerText = this.value || 'Walk-in Customer';
+    });
+    document.getElementById('custGstin').addEventListener('input', function() {
+        document.getElementById('displayCustGstin').innerText = this.value || '-';
+    });
+
+    function addItem() {
+        let name = document.getElementById('itemName').value;
+        let price = parseFloat(document.getElementById('itemPrice').value);
+        let qty = parseInt(document.getElementById('itemQty').value);
+        let gstRate = parseFloat(document.getElementById('gstRate').value);
+
+        if (!name || isNaN(price) || isNaN(qty) || price <= 0 || qty <= 0) {
+            alert('Please enter valid item details.');
+            return;
+        }
+
+        let baseAmount = price * qty;
+        let gstAmount = (baseAmount * gstRate) / 100;
+        let totalAmount = baseAmount + gstAmount;
+
+        cart.push({
+            name,
+            price,
+            qty,
+            gstRate,
+            baseAmount,
+            gstAmount,
+            totalAmount
+        });
+
+        // Reset inputs
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemPrice').value = '';
+        document.getElementById('itemQty').value = '1';
+
+        renderTable();
+    }
+
+    function removeItem(index) {
+        cart.splice(index, 1);
+        renderTable();
+    }
+
+    function renderTable() {
+        let tbody = document.getElementById('invoiceTableBody');
+        tbody.innerHTML = '';
+
+        let subTotal = 0;
+        let totalGst = 0;
+
+        cart.forEach((item, index) => {
+            subTotal += item.baseAmount;
+            totalGst += item.gstAmount;
+
+            let row = `<tr>
+                <td>${item.name}</td>
+                <td>₹${item.price.toFixed(2)}</td>
+                <td>${item.qty}</td>
+                <td>${item.gstRate}%</td>
+                <td>₹${item.totalAmount.toFixed(2)}</td>
+                <td class="no-print"><button onclick="removeItem(${index})" style="background-color: #dc3545; padding: 5px 10px; font-size: 12px;">Delete</button></td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+
+        let grandTotal = subTotal + totalGst;
+
+        document.getElementById('subTotal').innerText = subTotal.toFixed(2);
+        document.getElementById('totalGst').innerText = totalGst.toFixed(2);
+        document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+    }
+</script>
+
+</body>
+</html>
