@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS & Tax Invoice - Golden Star Furniture and Interior</title>
+    <title>Multi-Company POS & Tax Invoice App</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,6 +15,22 @@
         .container {
             max-width: 950px;
             margin: auto;
+        }
+        .company-bar {
+            background: #333;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .company-bar select {
+            padding: 5px;
+            font-weight: bold;
+            border-radius: 4px;
         }
         .tab-buttons {
             display: flex;
@@ -124,6 +140,8 @@
         .btn:hover { background-color: #0056b3; }
         .btn-success { background-color: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;}
         .btn-success:hover { background-color: #218838; }
+        .btn-whatsapp { background-color: #25D366; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-whatsapp:hover { background-color: #1ebe5d; }
         .btn-danger { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;}
         .btn-danger:hover { background-color: #bd2130; }
         .settings-bar {
@@ -148,7 +166,7 @@
         @media print {
             body { background-color: #fff; padding: 0; }
             .container, .invoice-box { box-shadow: none; border: none; padding: 0; max-width: 100%; }
-            .tab-buttons, .no-print, .settings-bar { display: none; }
+            .tab-buttons, .no-print, .settings-bar, .company-bar { display: none; }
             .input-field, select, textarea { border: none; background: transparent; appearance: none; }
         }
     </style>
@@ -156,12 +174,23 @@
 <body>
 
 <div class="container">
+    <!-- TOP COMPANY SWITCHER BAR -->
+    <div class="company-bar no-print">
+        <div><strong>Active Company:</strong> <span id="activeCompanyNameDisplay">Golden Star Furniture and Interior</span></div>
+        <div>
+            Switch Company: 
+            <select id="globalCompanySelect" onchange="switchCompany(this.value)">
+                <!-- Dynamic Companies -->
+            </select>
+        </div>
+    </div>
+
     <!-- Navigation Tabs -->
     <div class="tab-buttons no-print">
         <button class="tab-btn active" onclick="switchTab('invoice', event)">Create Invoice</button>
         <button class="tab-btn" onclick="switchTab('history', event)">Invoice History & Sales</button>
         <button class="tab-btn" onclick="switchTab('ledger', event)">Kisse Lena Hai (Ledger)</button>
-        <button class="tab-btn" onclick="switchTab('business', event)">Business Profile</button>
+        <button class="tab-btn" onclick="switchTab('business', event)">Manage Companies</button>
         <button class="tab-btn" onclick="switchTab('customers', event)">Customers</button>
         <button class="tab-btn" onclick="switchTab('inventory', event)">Stock</button>
     </div>
@@ -267,8 +296,9 @@
                 </div>
             </div>
 
-            <div style="margin-top: 20px; display: flex; gap: 10px;" class="no-print">
+            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
                 <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 2;">Save Invoice & Print</button>
+                <button class="btn-whatsapp" onclick="shareOnWhatsApp()" style="flex: 1;">Share on WhatsApp</button>
                 <button class="btn" onclick="resetInvoiceForm()" style="flex: 1; background-color: #6c757d;">Clear Form</button>
             </div>
         </div>
@@ -289,6 +319,7 @@
                 <tr>
                     <th>Inv No.</th>
                     <th>Date</th>
+                    <th>Company</th>
                     <th>Customer Name</th>
                     <th>Status</th>
                     <th>Grand Total (₹)</th>
@@ -299,7 +330,7 @@
         </table>
     </div>
 
-    <!-- 3. LEDGER PANEL (Kisse Lena Hai) -->
+    <!-- 3. LEDGER PANEL -->
     <div id="ledgerPanel" class="panel">
         <h3>Pending Payments (Kisse Paise Lene Hain)</h3>
         <p class="sub-text">Yahan aapko un sabhi customers ki list dikhegi jinka payment pending (udhaar) hai.</p>
@@ -318,11 +349,17 @@
         </table>
     </div>
 
-    <!-- 4. BUSINESS PROFILE -->
+    <!-- 4. MANAGE COMPANIES PANEL -->
     <div id="businessPanel" class="panel">
-        <h3>Business / Shop Profile Setup</h3>
+        <h3>Multi-Company Profile Setup</h3>
+        <p class="sub-text">Aap yahan apni alag-alag companies add aur update kar sakte hain.</p>
         <div class="box-section">
-            <label><strong>Company Name:</strong></label>
+            <label><strong>Select Company to Edit:</strong></label>
+            <select id="editCompanySelect" class="input-field" onchange="loadSelectedCompanyForm()">
+                <!-- Dynamic -->
+            </select>
+            
+            <label style="margin-top:10px;"><strong>Company Name:</strong></label>
             <input type="text" id="busName" class="input-field">
             <label><strong>Business Address:</strong></label>
             <textarea id="busAddress" class="input-field"></textarea>
@@ -341,7 +378,7 @@
             <label>IFSC Code:</label>
             <input type="text" id="bankIfsc" class="input-field">
             
-            <button class="btn" onclick="saveBusinessProfile()" style="margin-top:10px;">Save Business Profile</button>
+            <button class="btn" onclick="saveCompanyProfile()" style="margin-top:10px;">Save Company Changes</button>
         </div>
     </div>
 
@@ -388,16 +425,44 @@
 </div>
 
 <script>
-    let business = JSON.parse(localStorage.getItem('gs_business')) || {
-        name: "Golden Star Furniture and Interior",
-        address: "X Change Road, Lalchowk, Srinagar, J&K - 190008",
-        gstin: "01EBWPS3295G1Z4",
-        bankName: "Jammu and Kashmir Bank",
-        branch: "SSI BRANCH",
-        accName: "Golden Star Furniture and Interior",
-        accNo: "0777020100000609",
-        ifsc: "JAKAOSSISGR"
-    };
+    // Multiple Companies Data (Default 3-4 businesses)
+    let companies = JSON.parse(localStorage.getItem('gs_companies')) || [
+        {
+            id: 1,
+            name: "Golden Star Furniture and Interior",
+            address: "X Change Road, Lalchowk, Srinagar, J&K - 190008",
+            gstin: "01EBWPS3295G1Z4",
+            bankName: "Jammu and Kashmir Bank",
+            branch: "SSI BRANCH",
+            accName: "Golden Star Furniture and Interior",
+            accNo: "0777020100000609",
+            ifsc: "JAKAOSSISGR"
+        },
+        {
+            id: 2,
+            name: "Clapsmile",
+            address: "Srinagar, Jammu and Kashmir - 190001",
+            gstin: "01AABCD1234F1Z5",
+            bankName: "HDFC Bank",
+            branch: "Main Branch Srinagar",
+            accName: "Clapsmile",
+            accNo: "50200012345678",
+            ifsc: "HDFC0001234"
+        },
+        {
+            id: 3,
+            name: "Golden Square & Co.",
+            address: "Lalchowk, Srinagar, J&K - 190008",
+            gstin: "01XYZAB9876K1Z9",
+            bankName: "State Bank of India",
+            branch: "Commercial Branch",
+            accName: "Golden Square & Co.",
+            accNo: "33001122334",
+            ifsc: "SBIN0001872"
+        }
+    ];
+
+    let activeCompanyId = localStorage.getItem('gs_active_company') || 1;
 
     let customers = JSON.parse(localStorage.getItem('gs_customers')) || [
         { name: "PRINCIPAL KV1, SRINAGAR", address: "POST BATWARA, SHIV PORA MOD, Srinagar - 190004", phone: "7006688390", gstin: "" }
@@ -409,6 +474,71 @@
     let invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
 
     document.getElementById('invDate').valueAsDate = new Date();
+
+    function initCompanySelectors() {
+        let globalSelect = document.getElementById('globalCompanySelect');
+        let editSelect = document.getElementById('editCompanySelect');
+        globalSelect.innerHTML = '';
+        editSelect.innerHTML = '';
+
+        companies.forEach(comp => {
+            globalSelect.innerHTML += `<option value="${comp.id}" ${comp.id == activeCompanyId ? 'selected' : ''}>${comp.name}</option>`;
+            editSelect.innerHTML += `<option value="${comp.id}">${comp.name}</option>`;
+        });
+        loadActiveCompanyProfile();
+    }
+
+    function switchCompany(compId) {
+        activeCompanyId = compId;
+        localStorage.setItem('gs_active_company', compId);
+        loadActiveCompanyProfile();
+    }
+
+    function getActiveCompany() {
+        return companies.find(c => c.id == activeCompanyId) || companies[0];
+    }
+
+    function loadActiveCompanyProfile() {
+        let comp = getActiveCompany();
+        document.getElementById('activeCompanyNameDisplay').innerText = comp.name;
+        document.getElementById('lblCompanyName').innerText = comp.name;
+        document.getElementById('lblCompanyDetails').innerHTML = `${comp.address.replace(/\n/g, '<br>')}<br><strong>GSTIN:</strong> ${comp.gstin}`;
+        document.getElementById('lblBankDetails').innerHTML = `<strong>Bank Details:</strong><br>${comp.bankName} | ${comp.branch}<br>Acc Name: ${comp.accName}<br>Acc No: ${comp.accNo} | IFSC: ${comp.ifsc}`;
+    }
+
+    function loadSelectedCompanyForm() {
+        let compId = document.getElementById('editCompanySelect').value;
+        let comp = companies.find(c => c.id == compId);
+        if(!comp) return;
+
+        document.getElementById('busName').value = comp.name;
+        document.getElementById('busAddress').value = comp.address;
+        document.getElementById('busGstin').value = comp.gstin;
+        document.getElementById('bankName').value = comp.bankName;
+        document.getElementById('bankBranch').value = comp.branch;
+        document.getElementById('bankAccName').value = comp.accName;
+        document.getElementById('bankAccNo').value = comp.accNo;
+        document.getElementById('bankIfsc').value = comp.ifsc;
+    }
+
+    function saveCompanyProfile() {
+        let compId = document.getElementById('editCompanySelect').value;
+        let comp = companies.find(c => c.id == compId);
+        if(!comp) return;
+
+        comp.name = document.getElementById('busName').value.trim();
+        comp.address = document.getElementById('busAddress').value.trim();
+        comp.gstin = document.getElementById('busGstin').value.trim();
+        comp.bankName = document.getElementById('bankName').value.trim();
+        comp.branch = document.getElementById('bankBranch').value.trim();
+        comp.accName = document.getElementById('bankAccName').value.trim();
+        comp.accNo = document.getElementById('bankAccNo').value.trim();
+        comp.ifsc = document.getElementById('bankIfsc').value.trim();
+
+        localStorage.setItem('gs_companies', JSON.stringify(companies));
+        alert("Company profile updated successfully!");
+        initCompanySelectors();
+    }
 
     function switchTab(tab, event) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -428,7 +558,7 @@
         } else if(tab === 'business') {
             document.getElementById('businessPanel').classList.add('active');
             event.target.classList.add('active');
-            loadBusinessForm();
+            loadSelectedCompanyForm();
         } else if(tab === 'customers') {
             document.getElementById('customersPanel').classList.add('active');
             event.target.classList.add('active');
@@ -438,39 +568,6 @@
             event.target.classList.add('active');
             renderInventoryTable();
         }
-    }
-
-    function loadBusinessForm() {
-        document.getElementById('busName').value = business.name;
-        document.getElementById('busAddress').value = business.address;
-        document.getElementById('busGstin').value = business.gstin;
-        document.getElementById('bankName').value = business.bankName;
-        document.getElementById('bankBranch').value = business.branch;
-        document.getElementById('bankAccName').value = business.accName;
-        document.getElementById('bankAccNo').value = business.accNo;
-        document.getElementById('bankIfsc').value = business.ifsc;
-    }
-
-    function saveBusinessProfile() {
-        business = {
-            name: document.getElementById('busName').value.trim(),
-            address: document.getElementById('busAddress').value.trim(),
-            gstin: document.getElementById('busGstin').value.trim(),
-            bankName: document.getElementById('bankName').value.trim(),
-            branch: document.getElementById('bankBranch').value.trim(),
-            accName: document.getElementById('bankAccName').value.trim(),
-            accNo: document.getElementById('bankAccNo').value.trim(),
-            ifsc: document.getElementById('bankIfsc').value.trim()
-        };
-        localStorage.setItem('gs_business', JSON.stringify(business));
-        alert("Business profile updated successfully!");
-        loadBusinessProfileToInvoice();
-    }
-
-    function loadBusinessProfileToInvoice() {
-        document.getElementById('lblCompanyName').innerText = business.name;
-        document.getElementById('lblCompanyDetails').innerHTML = `${business.address.replace(/\n/g, '<br>')}<br><strong>GSTIN:</strong> ${business.gstin}`;
-        document.getElementById('lblBankDetails').innerHTML = `<strong>Bank Details:</strong><br>${business.bankName} | ${business.branch}<br>Acc Name: ${business.accName}<br>Acc No: ${business.accNo} | IFSC: ${business.ifsc}`;
     }
 
     function saveCustomer() {
@@ -564,9 +661,10 @@
         let rowCount = tbody.rows.length + 1;
         let tr = document.createElement('tr');
         
+        // Cleaned up option text (Stock count removed from dropdown view)
         let optionsHtml = '<option value="">Select from Inventory</option>';
         inventory.forEach((p, i) => {
-            optionsHtml += `<option value="${i}">${p.name} (Stock: ${p.stock})</option>`;
+            optionsHtml += `<option value="${i}">${p.name}</option>`;
         });
 
         tr.innerHTML = `
@@ -655,6 +753,7 @@
     function saveAndPrintInvoice() {
         let invNo = document.getElementById('invNumber').value;
         let invDate = document.getElementById('invDate').value;
+        let comp = getActiveCompany();
         let custIdx = document.getElementById('customerSelect').value;
         let custName = custIdx !== "" ? customers[custIdx].name : "Walk-in Customer";
         let custPhone = custIdx !== "" ? customers[custIdx].phone : "-";
@@ -669,6 +768,7 @@
         let newInvoice = {
             id: invNo,
             date: invDate,
+            companyName: comp.name,
             customer: custName,
             phone: custPhone,
             status: payStatus,
@@ -681,6 +781,19 @@
         window.print();
     }
 
+    function shareOnWhatsApp() {
+        let invNo = document.getElementById('invNumber').value;
+        let custIdx = document.getElementById('customerSelect').value;
+        let comp = getActiveCompany();
+        let grandTotal = document.getElementById('grandTotal').innerText;
+        let custPhone = custIdx !== "" ? customers[custIdx].phone : "";
+        let custName = custIdx !== "" ? customers[custIdx].name : "Customer";
+
+        let message = `Hello *${custName}*,\n\nHere is your Tax Invoice from *${comp.name}*:\n\n*Invoice No:* ${invNo}\n*Total Amount:* ₹${grandTotal}\n\nThank you for your business!`;
+        let whatsappUrl = `https://api.whatsapp.com/send?phone=${custPhone}&text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+
     function renderInvoiceHistory() {
         let tbody = document.getElementById('historyTableBody');
         tbody.innerHTML = '';
@@ -688,7 +801,7 @@
         let totalInvoices = invoices.length;
         let totalSales = 0;
         let monthSales = 0;
-        let currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+        let currentMonth = new Date().toISOString().slice(0, 7);
 
         invoices.forEach((inv, idx) => {
             totalSales += inv.total;
@@ -700,6 +813,7 @@
                 <tr>
                     <td>${inv.id}</td>
                     <td>${inv.date}</td>
+                    <td><small>${inv.companyName || 'Golden Star'}</small></td>
                     <td>${inv.customer}</td>
                     <td><span style="color: ${inv.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">${inv.status}</span></td>
                     <td>₹${inv.total.toFixed(2)}</td>
@@ -765,7 +879,7 @@
     }
 
     window.onload = function() {
-        loadBusinessProfileToInvoice();
+        initCompanySelectors();
         addItemRow();
         populateCustomerDropdown();
     }
