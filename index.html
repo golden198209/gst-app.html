@@ -409,6 +409,8 @@
     let invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
 
     document.getElementById('invDate').valueAsDate = new Date();
+    loadBusinessProfileToInvoice();
+    populateCustomerDropdown();
 
     function switchTab(tab, event) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -681,6 +683,16 @@
         window.print();
     }
 
+    function resetInvoiceForm() {
+        document.getElementById('itemRows').innerHTML = '';
+        document.getElementById('subTotal').innerText = '0.00';
+        document.getElementById('cgstTotal').innerText = '0.00';
+        document.getElementById('sgstTotal').innerText = '0.00';
+        document.getElementById('grandTotal').innerText = '0.00';
+        document.getElementById('customerSelect').value = '';
+        document.getElementById('customerInfo').innerHTML = '';
+    }
+
     function renderInvoiceHistory() {
         let tbody = document.getElementById('historyTableBody');
         tbody.innerHTML = '';
@@ -688,7 +700,7 @@
         let totalInvoices = invoices.length;
         let totalSales = 0;
         let monthSales = 0;
-        let currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+        let currentMonth = new Date().toISOString().slice(0, 7);
 
         invoices.forEach((inv, idx) => {
             totalSales += inv.total;
@@ -750,24 +762,9 @@
         if(inv) {
             inv.status = 'Paid';
             localStorage.setItem('gs_invoices', JSON.stringify(invoices));
-            alert("Payment marked as received/paid!");
+            alert("Payment marked as Paid successfully!");
             renderLedger();
         }
-    }
-
-    function resetInvoiceForm() {
-        document.getElementById('itemRows').innerHTML = '';
-        addItemRow();
-        document.getElementById('grandTotal').innerText = '0.00';
-        document.getElementById('subTotal').innerText = '0.00';
-        document.getElementById('cgstTotal').innerText = '0.00';
-        document.getElementById('sgstTotal').innerText = '0.00';
-    }
-
-    window.onload = function() {
-        loadBusinessProfileToInvoice();
-        addItemRow();
-        populateCustomerDropdown();
     }
 </script>
 
