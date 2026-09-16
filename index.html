@@ -13,22 +13,23 @@
             color: #000;
         }
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: auto;
         }
         .tab-buttons {
             display: flex;
-            gap: 10px;
+            gap: 5px;
             margin-bottom: 15px;
             flex-wrap: wrap;
         }
         .tab-btn {
-            padding: 10px 15px;
+            padding: 8px 12px;
             background-color: #ddd;
             border: none;
             cursor: pointer;
             font-weight: bold;
             border-radius: 4px;
+            font-size: 13px;
         }
         .tab-btn.active {
             background-color: #b30000;
@@ -121,6 +122,8 @@
             border-radius: 4px;
         }
         .btn:hover { background-color: #0056b3; }
+        .btn-success { background-color: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;}
+        .btn-success:hover { background-color: #218838; }
         .btn-danger { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;}
         .btn-danger:hover { background-color: #bd2130; }
         .settings-bar {
@@ -132,6 +135,15 @@
             gap: 20px;
             align-items: center;
             font-size: 13px;
+        }
+        .stats-card {
+            background: #f8f9fa;
+            border-left: 4px solid #b30000;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-around;
+            font-size: 14px;
         }
         @media print {
             body { background-color: #fff; padding: 0; }
@@ -147,9 +159,11 @@
     <!-- Navigation Tabs -->
     <div class="tab-buttons no-print">
         <button class="tab-btn active" onclick="switchTab('invoice', event)">Create Invoice</button>
-        <button class="tab-btn" onclick="switchTab('business', event)">Business Profile Setup</button>
-        <button class="tab-btn" onclick="switchTab('customers', event)">Manage Customers</button>
-        <button class="tab-btn" onclick="switchTab('inventory', event)">Item Stock Management</button>
+        <button class="tab-btn" onclick="switchTab('history', event)">Invoice History & Sales</button>
+        <button class="tab-btn" onclick="switchTab('ledger', event)">Kisse Lena Hai (Ledger)</button>
+        <button class="tab-btn" onclick="switchTab('business', event)">Business Profile</button>
+        <button class="tab-btn" onclick="switchTab('customers', event)">Customers</button>
+        <button class="tab-btn" onclick="switchTab('inventory', event)">Stock</button>
     </div>
 
     <!-- SETTINGS BAR -->
@@ -166,17 +180,14 @@
                 <tr>
                     <td>
                         <div class="company-title" id="lblCompanyName">Golden Star Furniture and Interior</div>
-                        <div class="sub-text" id="lblCompanyDetails">
-                            X Change Road, Lalchowk, Srinagar, J&K - 190008<br>
-                            <strong>GSTIN:</strong> 01EBWPS3295G1Z4
-                        </div>
+                        <div class="sub-text" id="lblCompanyDetails"></div>
                     </td>
                     <td>
                         <div class="invoice-title">TAX INVOICE</div>
                         <div class="sub-text" style="text-align: right; margin-top: 5px;">
                             ORIGINAL FOR RECIPIENT<br>
-                            <strong>Invoice No:</strong> <input type="text" class="input-field" value="GS/2026-27/01" style="width: 120px; text-align: right;"><br>
-                            <strong>Invoice Date:</strong> <input type="date" class="input-field" id="invDate" value="2026-07-18" style="width: 130px; text-align: right;">
+                            <strong>Invoice No:</strong> <input type="text" id="invNumber" class="input-field" value="GS/2026-27/01" style="width: 120px; text-align: right;"><br>
+                            <strong>Invoice Date:</strong> <input type="date" class="input-field" id="invDate" style="width: 130px; text-align: right;">
                         </div>
                     </td>
                 </tr>
@@ -193,9 +204,12 @@
                     </td>
                     <td style="width: 50%; padding-left: 10px;">
                         <strong>Place of Supply:</strong> 
-                        <input type="text" class="input-field" value="Jammu and Kashmir (01)"><br><br>
-                        <strong>Due Date:</strong> 
-                        <input type="date" class="input-field" value="2026-07-18">
+                        <input type="text" class="input-field" id="placeOfSupply" value="Jammu and Kashmir (01)"><br><br>
+                        <strong>Payment Status:</strong>
+                        <select id="payStatus" class="input-field">
+                            <option value="Paid">Paid</option>
+                            <option value="Pending" selected>Pending (Udhaar / Lena Hai)</option>
+                        </select>
                     </td>
                 </tr>
             </table>
@@ -214,9 +228,7 @@
                         <th class="no-print">Action</th>
                     </tr>
                 </thead>
-                <tbody id="itemRows">
-                    <!-- Dynamic Rows -->
-                </tbody>
+                <tbody id="itemRows"></tbody>
             </table>
             
             <button class="btn no-print" onclick="addItemRow()" style="margin-top: 10px;">+ Add Item</button>
@@ -227,11 +239,11 @@
                     <td style="width: 30%; text-align: right;" id="subTotal">0.00</td>
                 </tr>
                 <tr>
-                    <td style="text-align: right;"><strong>Add: CGST:</strong></td>
+                    <td style="text-align: right;"><strong>Add: CGST (9%):</strong></td>
                     <td style="text-align: right;" id="cgstTotal">0.00</td>
                 </tr>
                 <tr>
-                    <td style="text-align: right;"><strong>Add: SGST:</strong></td>
+                    <td style="text-align: right;"><strong>Add: SGST (9%):</strong></td>
                     <td style="text-align: right;" id="sgstTotal">0.00</td>
                 </tr>
                 <tr>
@@ -245,12 +257,7 @@
             </div>
 
             <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-                <div style="width: 48%; border: 1px solid #ccc; padding: 10px; font-size: 12px;" id="lblBankDetails">
-                    <strong>Bank Details:</strong><br>
-                    J&K Bank | SSI Branch<br>
-                    Acc Name: Golden Star Furniture and Interior<br>
-                    Acc No: 0777020100000609 | IFSC: JAKAOSSISGR
-                </div>
+                <div style="width: 48%; border: 1px solid #ccc; padding: 10px; font-size: 12px;" id="lblBankDetails"></div>
                 <div style="width: 48%; border: 1px solid #ccc; padding: 10px; font-size: 11px;">
                     <strong>Terms and Conditions:</strong>
                     <ul style="margin: 0; padding-left: 15px;">
@@ -260,40 +267,85 @@
                 </div>
             </div>
 
-            <button class="btn no-print" onclick="window.print()" style="margin-top: 20px; width: 100%;">Print / Save PDF</button>
+            <div style="margin-top: 20px; display: flex; gap: 10px;" class="no-print">
+                <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 2;">Save Invoice & Print</button>
+                <button class="btn" onclick="resetInvoiceForm()" style="flex: 1; background-color: #6c757d;">Clear Form</button>
+            </div>
         </div>
     </div>
 
-    <!-- 2. BUSINESS PROFILE SETUP -->
+    <!-- 2. HISTORY & SALES PANEL -->
+    <div id="historyPanel" class="panel">
+        <h3>Invoice History & Monthly Sales Report</h3>
+        <div class="stats-card">
+            <div><strong>Total Invoices Generated:</strong> <span id="statTotalInvoices">0</span></div>
+            <div><strong>Current Month Sales:</strong> ₹<span id="statMonthSales">0.00</span></div>
+            <div><strong>Total Lifetime Sales:</strong> ₹<span id="statTotalSales">0.00</span></div>
+        </div>
+        
+        <h4>Saved Invoices List</h4>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Inv No.</th>
+                    <th>Date</th>
+                    <th>Customer Name</th>
+                    <th>Status</th>
+                    <th>Grand Total (₹)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- 3. LEDGER PANEL (Kisse Lena Hai) -->
+    <div id="ledgerPanel" class="panel">
+        <h3>Pending Payments (Kisse Paise Lene Hain)</h3>
+        <p class="sub-text">Yahan aapko un sabhi customers ki list dikhegi jinka payment pending (udhaar) hai.</p>
+        
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Customer Name</th>
+                    <th>Phone</th>
+                    <th>Invoice No.</th>
+                    <th>Pending Amount (₹)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="ledgerTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- 4. BUSINESS PROFILE -->
     <div id="businessPanel" class="panel">
         <h3>Business / Shop Profile Setup</h3>
         <div class="box-section">
             <label><strong>Company Name:</strong></label>
-            <input type="text" id="busName" class="input-field" placeholder="Golden Star Furniture and Interior">
-            
+            <input type="text" id="busName" class="input-field">
             <label><strong>Business Address:</strong></label>
-            <textarea id="busAddress" class="input-field" placeholder="X Change Road, Lalchowk, Srinagar, J&K - 190008"></textarea>
-            
+            <textarea id="busAddress" class="input-field"></textarea>
             <label><strong>GSTIN Number:</strong></label>
-            <input type="text" id="busGstin" class="input-field" placeholder="01EBWPS3295G1Z4">
+            <input type="text" id="busGstin" class="input-field">
             
             <h4 style="margin-top:15px;">Bank Details</h4>
             <label>Bank Name:</label>
-            <input type="text" id="bankName" class="input-field" placeholder="Jammu and Kashmir Bank">
+            <input type="text" id="bankName" class="input-field">
             <label>Branch:</label>
-            <input type="text" id="bankBranch" class="input-field" placeholder="SSI BRANCH">
+            <input type="text" id="bankBranch" class="input-field">
             <label>Account Name:</label>
-            <input type="text" id="bankAccName" class="input-field" placeholder="Golden Star Furniture and Interior">
+            <input type="text" id="bankAccName" class="input-field">
             <label>Account Number:</label>
-            <input type="text" id="bankAccNo" class="input-field" placeholder="0777020100000609">
+            <input type="text" id="bankAccNo" class="input-field">
             <label>IFSC Code:</label>
-            <input type="text" id="bankIfsc" class="input-field" placeholder="JAKAOSSISGR">
+            <input type="text" id="bankIfsc" class="input-field">
             
             <button class="btn" onclick="saveBusinessProfile()" style="margin-top:10px;">Save Business Profile</button>
         </div>
     </div>
 
-    <!-- 3. CUSTOMER PANEL -->
+    <!-- 5. CUSTOMER PANEL -->
     <div id="customersPanel" class="panel">
         <h3>Customer Management</h3>
         <div class="box-section">
@@ -304,11 +356,11 @@
             <input type="text" id="newCustGstin" class="input-field" placeholder="GSTIN (Optional)">
             <button class="btn" onclick="saveCustomer()">Save Customer</button>
         </div>
-        <h4 style="margin-top: 20px;">Saved Customers List</h4>
+        <h4 style="margin-top: 20px;">Saved Customers</h4>
         <ul id="customerList" style="padding-left: 20px; font-size: 13px;"></ul>
     </div>
 
-    <!-- 4. INVENTORY PANEL -->
+    <!-- 6. INVENTORY PANEL -->
     <div id="inventoryPanel" class="panel">
         <h3>Item & Stock Management</h3>
         <div class="box-section">
@@ -326,7 +378,7 @@
                     <th>Product Name</th>
                     <th>HSN/SAC</th>
                     <th>Price (₹)</th>
-                    <th>Available Stock</th>
+                    <th>Stock</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -351,18 +403,28 @@
         { name: "PRINCIPAL KV1, SRINAGAR", address: "POST BATWARA, SHIV PORA MOD, Srinagar - 190004", phone: "7006688390", gstin: "" }
     ];
     let inventory = JSON.parse(localStorage.getItem('gs_inventory')) || [
-        { name: "BI PAINTS Epoxy Paints Marine Paints, size 1 lt", hsn: "3209", price: 294.92, stock: 50 },
         { name: "Wooden Chair", hsn: "9403", price: 1500, stock: 20 },
         { name: "Football", hsn: "9506", price: 600, stock: 30 }
     ];
+    let invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
+
+    document.getElementById('invDate').valueAsDate = new Date();
 
     function switchTab(tab, event) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
         if(tab === 'invoice') {
             document.getElementById('invoicePanel').classList.add('active');
             event.target.classList.add('active');
-            loadBusinessProfileToInvoice();
+        } else if(tab === 'history') {
+            document.getElementById('historyPanel').classList.add('active');
+            event.target.classList.add('active');
+            renderInvoiceHistory();
+        } else if(tab === 'ledger') {
+            document.getElementById('ledgerPanel').classList.add('active');
+            event.target.classList.add('active');
+            renderLedger();
         } else if(tab === 'business') {
             document.getElementById('businessPanel').classList.add('active');
             event.target.classList.add('active');
@@ -537,7 +599,6 @@
         calculateTotals();
     }
 
-    // Smart HSN Auto-Detect Dictionary based on keywords
     function autoDetectHSN(inputElem) {
         let name = inputElem.value.toLowerCase();
         let tr = inputElem.closest('tr');
@@ -589,6 +650,118 @@
         document.getElementById('cgstTotal').innerText = totalCgst.toFixed(2);
         document.getElementById('sgstTotal').innerText = totalSgst.toFixed(2);
         document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+    }
+
+    function saveAndPrintInvoice() {
+        let invNo = document.getElementById('invNumber').value;
+        let invDate = document.getElementById('invDate').value;
+        let custIdx = document.getElementById('customerSelect').value;
+        let custName = custIdx !== "" ? customers[custIdx].name : "Walk-in Customer";
+        let custPhone = custIdx !== "" ? customers[custIdx].phone : "-";
+        let payStatus = document.getElementById('payStatus').value;
+        let grandTotal = parseFloat(document.getElementById('grandTotal').innerText) || 0;
+
+        if(grandTotal === 0) {
+            alert("Please add items to invoice before saving!");
+            return;
+        }
+
+        let newInvoice = {
+            id: invNo,
+            date: invDate,
+            customer: custName,
+            phone: custPhone,
+            status: payStatus,
+            total: grandTotal
+        };
+
+        invoices.push(newInvoice);
+        localStorage.setItem('gs_invoices', JSON.stringify(invoices));
+        alert("Invoice saved successfully!");
+        window.print();
+    }
+
+    function renderInvoiceHistory() {
+        let tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = '';
+        
+        let totalInvoices = invoices.length;
+        let totalSales = 0;
+        let monthSales = 0;
+        let currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+        invoices.forEach((inv, idx) => {
+            totalSales += inv.total;
+            if(inv.date && inv.date.startsWith(currentMonth)) {
+                monthSales += inv.total;
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${inv.id}</td>
+                    <td>${inv.date}</td>
+                    <td>${inv.customer}</td>
+                    <td><span style="color: ${inv.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">${inv.status}</span></td>
+                    <td>₹${inv.total.toFixed(2)}</td>
+                    <td>
+                        <button onclick="deleteInvoice(${idx})" class="btn-danger" style="padding:2px 5px; font-size:10px;">Delete</button>
+                    </td>
+                </tr>`;
+        });
+
+        document.getElementById('statTotalInvoices').innerText = totalInvoices;
+        document.getElementById('statMonthSales').innerText = monthSales.toFixed(2);
+        document.getElementById('statTotalSales').innerText = totalSales.toFixed(2);
+    }
+
+    function deleteInvoice(idx) {
+        if(confirm("Are you sure you want to delete this invoice record?")) {
+            invoices.splice(idx, 1);
+            localStorage.setItem('gs_invoices', JSON.stringify(invoices));
+            renderInvoiceHistory();
+        }
+    }
+
+    function renderLedger() {
+        let tbody = document.getElementById('ledgerTableBody');
+        tbody.innerHTML = '';
+        
+        let pendingInvoices = invoices.filter(inv => inv.status === 'Pending');
+        
+        if(pendingInvoices.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:green; padding:15px;">Sabhi payments clear hain! Koi pending balance nahi hai.</td></tr>`;
+            return;
+        }
+
+        pendingInvoices.forEach((inv) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${inv.customer}</b></td>
+                    <td>${inv.phone}</td>
+                    <td>${inv.id}</td>
+                    <td style="color: red; font-weight: bold;">₹${inv.total.toFixed(2)}</td>
+                    <td><button class="btn-success" onclick="markAsPaid('${inv.id}')" style="padding:4px 8px; font-size:11px;">Mark as Paid</button></td>
+                </tr>`;
+        });
+    }
+
+    function markAsPaid(invId) {
+        let inv = invoices.find(i => i.id === invId);
+        if(inv) {
+            inv.status = 'Paid';
+            localStorage.setItem('gs_invoices', JSON.stringify(invoices));
+            alert("Payment marked as received/paid!");
+            renderLedger();
+        }
+    }
+
+    function resetInvoiceForm() {
+        document.getElementById('itemRows').innerHTML = '';
+        addItemRow();
+        document.getElementById('grandTotal').innerText = '0.00';
+        document.getElementById('subTotal').innerText = '0.00';
+        document.getElementById('cgstTotal').innerText = '0.00';
+        document.getElementById('sgstTotal').innerText = '0.00';
     }
 
     window.onload = function() {
