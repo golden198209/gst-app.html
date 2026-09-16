@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tax Invoice - Multi Company & Tax Summary</title>
+    <title>Tax Invoice - Custom Multi-Firm Generator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -77,9 +77,10 @@
         }
         .box-section {
             border: 1px solid #333;
-            padding: 8px;
+            padding: 10px;
             margin-top: 10px;
             font-size: 12px;
+            background: #fafafa;
         }
         .split-table {
             width: 100%;
@@ -136,9 +137,11 @@
         .input-field, select, textarea {
             width: 100%;
             box-sizing: border-box;
-            padding: 4px;
+            padding: 5px;
             font-size: 12px;
-            margin-bottom: 3px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
         }
         .btn {
             background-color: #007bff;
@@ -174,7 +177,7 @@
 <body>
 
 <div class="container">
-    <!-- Navigation Tabs (Multi-company & all features included) -->
+    <!-- Navigation Tabs -->
     <div class="tab-buttons no-print">
         <button class="tab-btn active" onclick="switchTab('invoice', event)">Create Invoice</button>
         <button class="tab-btn" onclick="switchTab('history', event)">Invoice History</button>
@@ -197,7 +200,7 @@
             <!-- Firm Selector Bar -->
             <div class="box-section no-print" style="margin-bottom: 10px; background: #f9f9f9;">
                 <label><strong>Select Billing Firm:</strong></label>
-                <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()" style="font-weight: bold;">
+                <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()" style="font-weight: bold; margin-top: 4px;">
                 </select>
             </div>
 
@@ -312,7 +315,7 @@
                             </tr>
                             <tr>
                                 <td>Received :</td>
-                                <td style="text-align: right;"><input type="number" id="amtReceived" class="input-field" value="0" oninput="calculateTotals()" style="width: 80px; text-align: right; display:inline-block;"></td>
+                                <td style="text-align: right;"><input type="number" id="amtReceived" class="input-field" value="0" oninput="calculateTotals()" style="width: 80px; text-align: right; display:inline-block; margin-bottom:0;"></td>
                             </tr>
                             <tr>
                                 <td><strong>Balance :</strong></td>
@@ -324,7 +327,7 @@
             </table>
 
             <!-- Terms and Conditions -->
-            <div class="box-section" style="margin-top: 10px;">
+            <div class="box-section" style="margin-top: 10px; background:#fff;">
                 <strong>Terms And Conditions:</strong><br>
                 <span class="sub-text">Thank you for doing business with us. Goods once sold will not be taken back.</span>
             </div>
@@ -388,33 +391,40 @@
         </table>
     </div>
 
-    <!-- 4. BUSINESS PROFILES PANEL (MULTI-COMPANY MANAGEMENT) -->
+    <!-- 4. BUSINESS PROFILES PANEL (MANUAL FIRM ENTRY) -->
     <div id="businessPanel" class="panel">
-        <h3>Manage Firms (Multi-Company)</h3>
+        <h3>Manage Firms (Apni Firm ki Detail Bhariye)</h3>
         <div class="box-section">
-            <h4 id="formTitle">Add New Firm</h4>
-            <input type="hidden" id="editCompanyIdx" value="-1">
-            <label>Firm Name:</label>
+            <h4 style="margin-top:0;">Add / Register New Firm</h4>
+            <label><strong>Firm Name:</strong></label>
             <input type="text" id="busName" class="input-field" placeholder="e.g. Golden Star Furniture and Interior">
-            <label>Prefix:</label>
-            <input type="text" id="busPrefix" class="input-field" placeholder="e.g. GSF">
-            <label>Address:</label>
-            <textarea id="busAddress" class="input-field"></textarea>
-            <label>Phone:</label>
-            <input type="text" id="busPhone" class="input-field">
-            <label>GSTIN:</label>
-            <input type="text" id="busGstin" class="input-field">
             
-            <h4 style="margin-top:10px;">Bank Details</h4>
-            <label>Bank Name:</label>
-            <input type="text" id="bankName" class="input-field">
-            <label>Account No:</label>
-            <input type="text" id="bankAccNo" class="input-field">
-            <label>IFSC Code:</label>
-            <input type="text" id="bankIfsc" class="input-field">
-            <button class="btn" onclick="saveBusinessProfile()" style="margin-top: 8px;">Save Firm</button>
+            <label><strong>Invoice Prefix:</strong></label>
+            <input type="text" id="busPrefix" class="input-field" placeholder="e.g. GSF">
+            
+            <label><strong>Full Address:</strong></label>
+            <textarea id="busAddress" class="input-field" placeholder="Shop address, Area, City, State"></textarea>
+            
+            <label><strong>Phone Number:</strong></label>
+            <input type="text" id="busPhone" class="input-field" placeholder="Mobile number">
+            
+            <label><strong>GSTIN:</strong></label>
+            <input type="text" id="busGstin" class="input-field" placeholder="GST Number (optional)">
+            
+            <h4 style="margin-top:12px; border-top:1px dashed #ccc; padding-top:8px;">Bank Details</h4>
+            <label><strong>Bank Name & Branch:</strong></label>
+            <input type="text" id="bankName" class="input-field" placeholder="e.g. Jammu And Kashmir Bank Limited, Amira Kadal">
+            
+            <label><strong>Account Number:</strong></label>
+            <input type="text" id="bankAccNo" class="input-field" placeholder="Bank Account Number">
+            
+            <label><strong>IFSC Code:</strong></label>
+            <input type="text" id="bankIfsc" class="input-field" placeholder="IFSC Code">
+            
+            <button class="btn btn-success" onclick="saveBusinessProfile()" style="margin-top: 10px; width:100%;">Save New Firm</button>
         </div>
-        <h4 style="margin-top: 15px;">Registered Firms</h4>
+        
+        <h4 style="margin-top: 20px;">Already Saved Firms:</h4>
         <table class="items-table">
             <thead>
                 <tr>
@@ -476,26 +486,6 @@
             bankName: "Jammu And Kashmir Bank Limited, Amira Kadal Srinagar",
             accNo: "0002010100008509",
             ifsc: "JAKAOSQUARE"
-        },
-        {
-            name: "Golden Star Furniture and Interior",
-            prefix: "GSF",
-            address: "Srinagar, Jammu and Kashmir",
-            phone: "",
-            gstin: "",
-            bankName: "Jammu And Kashmir Bank Limited",
-            accNo: "",
-            ifsc: ""
-        },
-        {
-            name: "Clapsmile",
-            prefix: "CS",
-            address: "Srinagar, Jammu and Kashmir",
-            phone: "",
-            gstin: "",
-            bankName: "Jammu And Kashmir Bank Limited",
-            accNo: "",
-            ifsc: ""
         }
     ];
 
@@ -512,7 +502,8 @@
     populateFirmDropdowns();
     onFirmChange();
     populateCustomerDropdown();
-    addItemRow(); // Default initial row
+    renderCompanyTable();
+    addItemRow();
 
     function switchTab(tab, event) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -555,15 +546,16 @@
         let accNo = document.getElementById('bankAccNo').value.trim();
         let ifsc = document.getElementById('bankIfsc').value.trim();
         
-        if(!name) { alert("Firm name is required!"); return; }
+        if(!name) { alert("Firm name dalna zaroori hai!"); return; }
 
         companies.push({ name, prefix, address, phone, gstin, bankName, accNo, ifsc });
         localStorage.setItem('gs_companies', JSON.stringify(companies));
+        
         populateFirmDropdowns();
         renderCompanyTable();
-        alert("Firm saved successfully!");
+        alert("Firm successfully save ho gayi hai!");
         
-        // Reset form
+        // Clear input fields
         document.getElementById('busName').value = '';
         document.getElementById('busPrefix').value = '';
         document.getElementById('busAddress').value = '';
@@ -600,20 +592,20 @@
         tr.innerHTML = `
             <td>${rowCount}</td>
             <td class="left">
-                <select class="input-field" onchange="selectInventoryItem(this)">${optionsHtml}</select>
-                <input type="text" class="input-field prod-name-input" placeholder="Item name" style="margin-top:2px;">
+                <select class="input-field" onchange="selectInventoryItem(this)" style="margin-bottom:2px;">${optionsHtml}</select>
+                <input type="text" class="input-field prod-name-input" placeholder="Item name" style="margin-bottom:0;">
             </td>
-            <td><input type="text" class="input-field hsn" value="9403" style="width: 55px;"></td>
-            <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 45px;"></td>
+            <td><input type="text" class="input-field hsn" value="9403" style="width: 55px; margin-bottom:0;"></td>
+            <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 45px; margin-bottom:0;"></td>
             <td>
-                <select class="input-field unit" style="width: 55px;">
+                <select class="input-field unit" style="width: 55px; margin-bottom:0;">
                     <option value="Nos">Nos</option>
                     <option value="Pcs">Pcs</option>
                     <option value="Set">Set</option>
                     <option value="-">-</option>
                 </select>
             </td>
-            <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 70px;"></td>
+            <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 70px; margin-bottom:0;"></td>
             <td class="right gst-val">0.00</td>
             <td class="right row-total">0.00</td>
             <td class="no-print"><button onclick="this.closest('tr').remove(); calculateTotals();" class="btn-danger" style="padding:2px 5px;">X</button></td>
@@ -653,7 +645,7 @@
                 total = inputRate * qty;
             } else {
                 taxable = inputRate * qty;
-                gstAmt = taxable * 0.18; // 9% CGST + 9% SGST
+                gstAmt = taxable * 0.18;
                 total = taxable + gstAmt;
             }
 
@@ -661,7 +653,6 @@
             row.querySelector('.row-total').innerText = `₹${total.toFixed(2)}`;
             subTotal += taxable + gstAmt;
 
-            // Group for Tax Summary
             if(!taxSummaryMap[hsn]) {
                 taxSummaryMap[hsn] = { taxable: 0, cgstAmt: 0, sgstAmt: 0, totalTax: 0 };
             }
@@ -671,7 +662,6 @@
             taxSummaryMap[hsn].totalTax += gstAmt;
         });
 
-        // Render Tax Summary Table
         let taxBody = document.getElementById('taxSummaryRows');
         taxBody.innerHTML = '';
         let totTaxable = 0, totCgst = 0, totSgst = 0, totAllTax = 0;
@@ -696,7 +686,6 @@
             `;
         }
 
-        // Add total row to tax summary
         taxBody.innerHTML += `
             <tr style="font-weight: bold; background: #f9f9f9;">
                 <td>TOTAL</td>
