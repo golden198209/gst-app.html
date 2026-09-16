@@ -802,22 +802,22 @@
                 let qty = row.querySelector('.qty').value;
                 let unit = row.querySelector('.unit').value;
                 let tot = row.querySelector('.row-total').innerText;
-                itemsText += `${count}. ${itemName} (${qty} ${unit}) - ${tot}%0A`;
+                itemsText += `${count}. ${itemName} (${qty} ${unit}) - ${tot}\n`;
                 count++;
             }
         });
 
-        let text = `*TAX INVOICE* %0A` +
-                   `🏢 *${firm.name}*%0A` +
-                   `--------------------------------%0A` +
-                   `📄 *Inv No:* ${invNo} | *Date:* ${invDate}%0A` +
-                   `👤 *Bill To:* ${custText}%0A` +
-                   `--------------------------------%0A` +
-                   `📦 *Items:*%0A` + itemsText +
-                   `--------------------------------%0A` +
-                   `💰 *Grand Total:* *${grandTotal}*%0A` +
-                   `🔴 *Balance Due:* ${balance}%0A` +
-                   `--------------------------------%0A` +
+        let text = `*TAX INVOICE*\n` +
+                   `🏢 *${firm.name}*\n` +
+                   `--------------------------------\n` +
+                   `📄 *Inv No:* ${invNo} | *Date:* ${invDate}\n` +
+                   `👤 *Bill To:* ${custText}\n` +
+                   `--------------------------------\n` +
+                   `📦 *Items:*\n` + itemsText +
+                   `--------------------------------\n` +
+                   `💰 *Grand Total:* *${grandTotal}*\n` +
+                   `🔴 *Balance Due:* ${balance}\n` +
+                   `--------------------------------\n` +
                    `🙏 Thank you for your business!`;
         return text;
     }
@@ -825,7 +825,7 @@
     function shareOnWhatsApp() {
         processInvoiceSave();
         let text = getInvoiceTextSummary();
-        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
     }
 
     function shareViaEmail() {
