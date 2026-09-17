@@ -190,9 +190,15 @@
     <div id="invoicePanel" class="panel active">
         <div class="invoice-box">
             <!-- Firm Selector Bar -->
-            <div class="box-section no-print" style="margin-bottom: 10px; background: #f9f9f9;">
-                <label><strong>Select Billing Firm:</strong></label>
-                <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()" style="font-weight: bold; margin-top: 4px;"></select>
+            <div class="box-section no-print" style="margin-bottom: 10px; background: #f9f9f9; display: flex; gap: 15px;">
+                <div style="flex: 1;">
+                    <label><strong>Select Billing Firm:</strong></label>
+                    <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()" style="font-weight: bold; margin-top: 4px;"></select>
+                </div>
+                <div style="flex: 1;" class="no-print">
+                    <label><strong>Select Customer (Quick Fill):</strong></label>
+                    <select id="activeCustomerSelect" class="input-field" onchange="onCustomerSelected()" style="font-weight: bold; margin-top: 4px;"></select>
+                </div>
             </div>
 
             <div class="invoice-main-title">Tax Invoice</div>
@@ -470,7 +476,9 @@ State: 01-Jammu & Kashmir</textarea>
         }
     ];
 
-    let customers = JSON.parse(localStorage.getItem('gs_customers')) || [];
+    let customers = JSON.parse(localStorage.getItem('gs_customers')) || [
+        { name: "PRINCIPAL KV HUMHAMA", address: "STC BSF CAMPUS, HUMHAMA, Budgam, JAMMU & KASHMIR-190007, India", phone: "", gstin: "Unregistered", state: "01-Jammu & Kashmir" }
+    ];
     let inventory = JSON.parse(localStorage.getItem('gs_inventory')) || [
         { name: "Steel almirah big one", hsn: "9403", price: 9322.03, gst: 18, stock: 10 },
         { name: "Almirah small", hsn: "9403", price: 5508.47, gst: 18, stock: 15 }
@@ -479,6 +487,7 @@ State: 01-Jammu & Kashmir</textarea>
 
     document.getElementById('invDate').valueAsDate = new Date();
     populateFirmDropdowns();
+    populateCustomerDropdown();
     onFirmChange();
     renderCompanyTable();
     renderCustomerList();
@@ -517,6 +526,22 @@ State: 01-Jammu & Kashmir</textarea>
         companies.forEach((comp, idx) => {
             select.innerHTML += `<option value="${idx}">${comp.name}</option>`;
         });
+    }
+
+    function populateCustomerDropdown() {
+        let select = document.getElementById('activeCustomerSelect');
+        select.innerHTML = '<option value="">-- Select Customer --</option>';
+        customers.forEach((cust, idx) => {
+            select.innerHTML += `<option value="${idx}">${cust.name}</option>`;
+        });
+    }
+
+    function onCustomerSelected() {
+        let idx = document.getElementById('activeCustomerSelect').value;
+        if(idx === "") return;
+        let c = customers[idx];
+        let formattedDetails = `${c.name}\n${c.address}\nGSTIN: ${c.gstin || 'Unregistered'}\nState: ${c.state || '01-Jammu & Kashmir'}`;
+        document.getElementById('manualCustDetails').value = formattedDetails;
     }
 
     function onFirmChange() {
@@ -712,7 +737,7 @@ State: 01-Jammu & Kashmir</textarea>
         let list = document.getElementById('customerList');
         list.innerHTML = '';
         customers.forEach((c, idx) => {
-            list.innerHTML += `<li><b>${c.name}</b> [GSTIN: ${c.gstin || 'N/A'}] - ${c.address} <button onclick="customers.splice(${idx},1); localStorage.setItem('gs_customers', JSON.stringify(customers)); renderCustomerList();" class="btn-danger" style="padding:1px 4px; font-size:10px;">X</button></li>`;
+            list.innerHTML += `<li><b>${c.name}</b> [GSTIN: ${c.gstin || 'N/A'}] - ${c.address} <button onclick="customers.splice(${idx},1); localStorage.setItem('gs_customers', JSON.stringify(customers)); renderCustomerList(); populateCustomerDropdown();" class="btn-danger" style="padding:1px 4px; font-size:10px;">X</button></li>`;
         });
     }
 
@@ -810,8 +835,6 @@ State: 01-Jammu & Kashmir</textarea>
 
         invoices.push(newInv);
         localStorage.setItem('gs_invoices', JSON.stringify(invoices));
-        
-        // Auto increment invoice number for next bill
         setNextInvoiceNumber();
     }
 
@@ -866,11 +889,13 @@ State: 01-Jammu & Kashmir</textarea>
         let address = document.getElementById('newCustAddress').value.trim();
         let phone = document.getElementById('newCustPhone').value.trim();
         let gstin = document.getElementById('newCustGstin').value.trim();
-        if(!name) return;
-        customers.push({name, address, phone, gstin});
+        if(!name) { alert("Customer name zaroori hai!"); return; }
+        
+        customers.push({name, address, phone, gstin, state: "01-Jammu & Kashmir"});
         localStorage.setItem('gs_customers', JSON.stringify(customers));
         renderCustomerList();
-        alert("Customer saved!");
+        populateCustomerDropdown();
+        alert("Customer saved successfully!");
     }
 
     function saveProduct() {
@@ -900,6 +925,7 @@ State: 01-Jammu & Kashmir</textarea>
         document.getElementById('amtReceived').value = 0;
         document.getElementById('manualCustDetails').value = '';
         document.getElementById('invoiceRemarks').value = '';
+        document.getElementById('activeCustomerSelect').value = '';
         calculateTotals();
         setNextInvoiceNumber();
     }
