@@ -206,7 +206,7 @@
                     </td>
                     <td style="width: 45%; vertical-align: top; text-align: right;">
                         <div class="sub-text" style="text-align: left;">
-                            <strong>No:</strong> <input type="text" id="invNumber" class="input-field" value="22" style="width: 120px; display:inline-block;"><br>
+                            <strong>Invoice:</strong> <input type="text" id="invNumber" class="input-field" value="22" style="width: 120px; display:inline-block;"><br>
                             <strong>Date:</strong> <input type="date" class="input-field" id="invDate" style="width: 130px; display:inline-block;"><br>
                             <strong>Place of Supply:</strong> <input type="text" class="input-field" id="placeOfSupply" value="01-Jammu & Kashmir" style="width: 140px; display:inline-block;">
                         </div>
@@ -345,7 +345,7 @@ State: 01-Jammu & Kashmir</textarea>
             <thead>
                 <tr>
                     <th>Firm</th>
-                    <th>Inv No.</th>
+                    <th>Invoice No.</th>
                     <th>Date</th>
                     <th>Customer</th>
                     <th>Status</th>
@@ -483,6 +483,21 @@ State: 01-Jammu & Kashmir</textarea>
     renderCompanyTable();
     renderCustomerList();
     addItemRow();
+    setNextInvoiceNumber();
+
+    function setNextInvoiceNumber() {
+        if(invoices.length > 0) {
+            let lastInv = invoices[invoices.length - 1];
+            let lastNum = parseInt(lastInv.id);
+            if(!isNaN(lastNum)) {
+                document.getElementById('invNumber').value = lastNum + 1;
+            } else {
+                document.getElementById('invNumber').value = invoices.length + 22;
+            }
+        } else {
+            document.getElementById('invNumber').value = "22";
+        }
+    }
 
     function switchTab(tab, event) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -739,7 +754,7 @@ State: 01-Jammu & Kashmir</textarea>
         let text = `*TAX INVOICE*\n` +
                    `🏢 *${firm.name}*\n` +
                    `--------------------------------\n` +
-                   `📄 *Inv No:* ${invNo} | *Date:* ${invDate}\n` +
+                   `📄 *Invoice No:* ${invNo} | *Date:* ${invDate}\n` +
                    `👤 *Bill To:* ${custText}\n` +
                    `--------------------------------\n` +
                    `📦 *Items:*\n` + itemsText +
@@ -775,7 +790,6 @@ State: 01-Jammu & Kashmir</textarea>
         let invNo = document.getElementById('invNumber').value;
         let invDate = document.getElementById('invDate').value;
         
-        // Extract first line of manual customer details as customer name for history
         let custLines = document.getElementById('manualCustDetails').value.trim().split('\n');
         let custName = custLines[0] || "Walk-in Customer";
 
@@ -796,6 +810,9 @@ State: 01-Jammu & Kashmir</textarea>
 
         invoices.push(newInv);
         localStorage.setItem('gs_invoices', JSON.stringify(invoices));
+        
+        // Auto increment invoice number for next bill
+        setNextInvoiceNumber();
     }
 
     function renderInvoiceHistory() {
@@ -884,6 +901,7 @@ State: 01-Jammu & Kashmir</textarea>
         document.getElementById('manualCustDetails').value = '';
         document.getElementById('invoiceRemarks').value = '';
         calculateTotals();
+        setNextInvoiceNumber();
     }
 </script>
 
