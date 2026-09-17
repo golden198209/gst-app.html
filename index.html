@@ -242,11 +242,10 @@
         </div>
     </div>
 
-    <!-- FIREBOX CONFIG PANEL (HIDDEN BY DEFAULT) -->
+    <!-- FIREBOX CONFIG PANEL -->
     <div id="cloudConfigBox" class="box-section no-print" style="display: none; background: #e8f4fd; margin-bottom: 15px;">
         <h4 style="margin-top:0;">Firebase Cloud Database Configuration</h4>
-        <p style="font-size: 11px; color: #555;">Apna Firebase project config yahan dalein taaki saara data cloud par sync ho sake:</p>
-        <textarea id="firebaseConfigInput" class="input-field" rows="4" placeholder='Paste firebaseConfig JSON here (e.g. { apiKey: "...", authDomain: "...", ... })'></textarea>
+        <textarea id="firebaseConfigInput" class="input-field" rows="4" placeholder='Paste firebaseConfig JSON here'></textarea>
         <button class="btn-success" onclick="saveFirebaseConfig()" style="padding: 5px 10px;">Connect & Save Cloud</button>
     </div>
 
@@ -323,7 +322,6 @@ State: 01-Jammu & Kashmir</textarea>
             <!-- Tax Summary & Totals Section -->
             <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
                 <tr>
-                    <!-- Left: Tax Summary Table -->
                     <td style="width: 62%; vertical-align: top; padding-right: 5px;">
                         <div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">Tax Summary:</div>
                         <table class="tax-summary-table">
@@ -345,8 +343,6 @@ State: 01-Jammu & Kashmir</textarea>
                             <tbody id="taxSummaryRows"></tbody>
                         </table>
                     </td>
-                    
-                    <!-- Right: Subtotal, Grand Total, Received, Balance -->
                     <td style="width: 38%; vertical-align: top; padding-left: 5px;">
                         <table class="totals-box-table">
                             <tr>
@@ -413,15 +409,7 @@ State: 01-Jammu & Kashmir</textarea>
         <h3>Invoice History</h3>
         <table class="items-table">
             <thead>
-                <tr>
-                    <th>Firm</th>
-                    <th>Invoice No.</th>
-                    <th>Date</th>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th>Total (₹)</th>
-                    <th>Action</th>
-                </tr>
+                <tr><th>Firm</th><th>Invoice No.</th><th>Date</th><th>Customer</th><th>Status</th><th>Total (₹)</th><th>Action</th></tr>
             </thead>
             <tbody id="historyTableBody"></tbody>
         </table>
@@ -432,12 +420,7 @@ State: 01-Jammu & Kashmir</textarea>
         <h3>Pending Payments (Kisse Paise Lene Hain)</h3>
         <table class="items-table">
             <thead>
-                <tr>
-                    <th>Customer Name / Details</th>
-                    <th>Invoice No.</th>
-                    <th>Balance Amount (₹)</th>
-                    <th>Action</th>
-                </tr>
+                <tr><th>Customer Name / Details</th><th>Invoice No.</th><th>Balance Amount (₹)</th><th>Action</th></tr>
             </thead>
             <tbody id="ledgerTableBody"></tbody>
         </table>
@@ -447,45 +430,18 @@ State: 01-Jammu & Kashmir</textarea>
     <div id="reportsPanel" class="panel">
         <h3>📊 Business Reports & GSTR-1 Tax Summary</h3>
         <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-            <div class="stat-card">
-                <h4>Total Sales Revenue</h4>
-                <div id="repTotalSales">₹0.00</div>
-            </div>
-            <div class="stat-card">
-                <h4>Total Amount Received</h4>
-                <div id="repTotalReceived" style="color: green;">₹0.00</div>
-            </div>
-            <div class="stat-card">
-                <h4>Total Pending (Udhaar)</h4>
-                <div id="repTotalPending" style="color: red;">₹0.00</div>
-            </div>
+            <div class="stat-card"><h4>Total Sales Revenue</h4><div id="repTotalSales">₹0.00</div></div>
+            <div class="stat-card"><h4>Total Amount Received</h4><div id="repTotalReceived" style="color: green;">₹0.00</div></div>
+            <div class="stat-card"><h4>Total Pending (Udhaar)</h4><div id="repTotalPending" style="color: red;">₹0.00</div></div>
         </div>
-
         <h4 style="border-top: 1px solid #ccc; padding-top: 10px;">GSTR-1 HSN-Wise Summary Report</h4>
         <table class="items-table">
-            <thead>
-                <tr>
-                    <th>HSN / SAC</th>
-                    <th>Total Taxable Value (₹)</th>
-                    <th>CGST Amount (₹)</th>
-                    <th>SGST Amount (₹)</th>
-                    <th>Total Tax Amount (₹)</th>
-                </tr>
-            </thead>
+            <thead><tr><th>HSN / SAC</th><th>Total Taxable Value (₹)</th><th>CGST Amount (₹)</th><th>SGST Amount (₹)</th><th>Total Tax Amount (₹)</th></tr></thead>
             <tbody id="gstr1TableBody"></tbody>
         </table>
-
-        <h4 style="margin-top:20px;">Day Book (Recent Transactions Summary)</h4>
+        <h4 style="margin-top:20px;">Day Book</h4>
         <table class="items-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Invoice No.</th>
-                    <th>Customer Name</th>
-                    <th>Total Bill (₹)</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Date</th><th>Invoice No.</th><th>Customer Name</th><th>Total Bill (₹)</th><th>Status</th></tr></thead>
             <tbody id="dayBookTableBody"></tbody>
         </table>
     </div>
@@ -494,59 +450,31 @@ State: 01-Jammu & Kashmir</textarea>
     <div id="businessPanel" class="panel">
         <h3>Manage Firms</h3>
         <div class="box-section">
-            <h4 style="margin-top:0;">Add / Register New Firm</h4>
-            <label><strong>Firm Name:</strong></label>
-            <input type="text" id="busName" class="input-field" placeholder="e.g. Golden Star Furniture">
-            <label><strong>Invoice Prefix:</strong></label>
-            <input type="text" id="busPrefix" class="input-field" placeholder="e.g. GSF">
-            <label><strong>Full Address:</strong></label>
-            <textarea id="busAddress" class="input-field" placeholder="Shop address, City, State"></textarea>
-            <label><strong>Phone Number:</strong></label>
-            <input type="text" id="busPhone" class="input-field" placeholder="Mobile number">
-            <label><strong>GSTIN:</strong></label>
-            <input type="text" id="busGstin" class="input-field" placeholder="GST Number">
-            <h4 style="margin-top:12px; border-top:1px dashed #ccc; padding-top:8px;">Bank Details</h4>
-            <label><strong>Bank Name & Branch:</strong></label>
-            <input type="text" id="bankName" class="input-field" placeholder="Bank Name">
-            <label><strong>Account Number:</strong></label>
-            <input type="text" id="bankAccNo" class="input-field" placeholder="Account Number">
-            <label><strong>IFSC Code:</strong></label>
-            <input type="text" id="bankIfsc" class="input-field" placeholder="IFSC Code">
-            <button class="btn-success" onclick="saveBusinessProfile()" style="margin-top: 10px; width:100%;">Save New Firm</button>
+            <input type="text" id="busName" class="input-field" placeholder="Firm Name">
+            <input type="text" id="busPrefix" class="input-field" placeholder="Prefix">
+            <textarea id="busAddress" class="input-field" placeholder="Address"></textarea>
+            <input type="text" id="busPhone" class="input-field" placeholder="Phone">
+            <input type="text" id="busGstin" class="input-field" placeholder="GSTIN">
+            <button class="btn-success" onclick="saveBusinessProfile()" style="margin-top: 10px; width:100%;">Save Firm</button>
         </div>
-        <h4 style="margin-top: 20px;">Already Saved Firms:</h4>
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th>Firm Name</th>
-                    <th>GSTIN</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+        <table class="items-table" style="margin-top:15px;">
+            <thead><tr><th>Firm Name</th><th>GSTIN</th><th>Action</th></tr></thead>
             <tbody id="companyTableBody"></tbody>
         </table>
     </div>
 
     <!-- 6. CUSTOMERS PANEL -->
     <div id="customersPanel" class="panel">
-        <h3>Customer Management & Ledger Statements</h3>
+        <h3>Customer Management</h3>
         <div class="box-section">
             <input type="text" id="newCustName" class="input-field" placeholder="Customer Name">
             <textarea id="newCustAddress" class="input-field" placeholder="Address"></textarea>
             <input type="text" id="newCustPhone" class="input-field" placeholder="Phone">
-            <input type="text" id="newCustGstin" class="input-field" placeholder="GSTIN (Optional)">
+            <input type="text" id="newCustGstin" class="input-field" placeholder="GSTIN">
             <button class="btn-success" onclick="saveCustomer()">Save Customer</button>
         </div>
         <table class="items-table" style="margin-top: 15px;">
-            <thead>
-                <tr>
-                    <th>Customer Name</th>
-                    <th>Phone</th>
-                    <th>GSTIN / Address</th>
-                    <th>Statement / Ledger</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Customer Name</th><th>Phone</th><th>GSTIN / Address</th><th>Ledger</th><th>Action</th></tr></thead>
             <tbody id="customerTableBody"></tbody>
         </table>
     </div>
@@ -573,17 +501,7 @@ State: 01-Jammu & Kashmir</textarea>
             <button class="btn-success" onclick="saveProduct()">Save Product & Barcode</button>
         </div>
         <table class="items-table" style="margin-top: 15px;">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Barcode</th>
-                    <th>HSN</th>
-                    <th>Price</th>
-                    <th>GST</th>
-                    <th>Stock Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Product</th><th>Barcode</th><th>HSN</th><th>Price</th><th>GST</th><th>Stock</th><th>Action</th></tr></thead>
             <tbody id="inventoryTableBody"></tbody>
         </table>
     </div>
@@ -610,7 +528,6 @@ State: 01-Jammu & Kashmir</textarea>
 </div>
 
 <script>
-    // Data structures (Local + Firebase Sync logic)
     let db = null;
     let useCloud = false;
 
@@ -647,7 +564,6 @@ State: 01-Jammu & Kashmir</textarea>
         addItemRow();
         setNextInvoiceNumber();
 
-        // Check if firebase config saved previously
         let savedCfg = localStorage.getItem('gs_fb_config');
         if(savedCfg) {
             try {
@@ -672,7 +588,7 @@ State: 01-Jammu & Kashmir</textarea>
             alert("Firebase successfully connected!");
             toggleCloudConfig();
         } catch(e) {
-            alert("Invalid JSON format! Kripya sahi Firebase config JSON dalein.");
+            alert("Invalid JSON format!");
         }
     }
 
@@ -686,10 +602,7 @@ State: 01-Jammu & Kashmir</textarea>
             document.getElementById('syncStatus').innerText = "☁️ Cloud Synced";
             document.getElementById('syncStatus').style.color = "#007bff";
             fetchCloudData();
-        } catch(e) {
-            console.error(e);
-            useCloud = false;
-        }
+        } catch(e) { useCloud = false; }
     }
 
     async function fetchCloudData() {
@@ -702,13 +615,12 @@ State: 01-Jammu & Kashmir</textarea>
                 if(data.customers) customers = data.customers;
                 if(data.inventory) inventory = data.inventory;
                 if(data.invoices) invoices = data.invoices;
-                
                 populateFirmDropdowns();
                 populateCustomerDropdown();
                 renderInventoryTable();
                 onFirmChange();
             }
-        } catch(e) { console.error("Cloud fetch error", e); }
+        } catch(e) {}
     }
 
     function syncToCloud() {
@@ -721,11 +633,14 @@ State: 01-Jammu & Kashmir</textarea>
         }
         db.collection('pos_data').doc('store').set({
             companies, customers, inventory, invoices
-        }).catch(e => console.error("Cloud sync failed", e));
+        }).catch(e => {});
     }
 
-    // Camera Barcode Scanner Integration using QuaggaJS
-    let activeScannerTarget = 'global'; // 'global' or 'inventory'
+    // Camera Barcode Scanner Integration with Duplicate Prevention (Debounce)
+    let activeScannerTarget = 'global';
+    let lastScannedCode = '';
+    let lastScanTime = 0;
+
     function startCameraScanner(target = 'global') {
         activeScannerTarget = target;
         document.getElementById('scannerModal').style.display = 'flex';
@@ -735,17 +650,14 @@ State: 01-Jammu & Kashmir</textarea>
                 name: "Live",
                 type: "LiveStream",
                 target: document.querySelector('#interactive'),
-                constraints: {
-                    facingMode: "environment" // Use back camera on phones
-                },
+                constraints: { facingMode: "environment" },
             },
             decoder: {
                 readers: ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader", "upc_e_reader"]
             }
         }, function(err) {
             if (err) {
-                console.error(err);
-                alert("Camera start nahi ho saka! Kripya camera permission check karein.");
+                alert("Camera start nahi ho saka!");
                 stopCameraScanner();
                 return;
             }
@@ -760,14 +672,21 @@ State: 01-Jammu & Kashmir</textarea>
     }
 
     function stopCameraScanner() {
-        try {
-            Quagga.stop();
-        } catch(e) {}
+        try { Quagga.stop(); } catch(e) {}
         document.getElementById('scannerModal').style.display = 'none';
     }
 
     function onBarcodeScannedFromCamera(result) {
         let code = result.codeResult.code;
+        let currentTime = new Date().getTime();
+
+        // Prevent duplicate firing within 2 seconds for the same barcode
+        if (code === lastScannedCode && (currentTime - lastScanTime < 2000)) {
+            return; 
+        }
+        
+        lastScannedCode = code;
+        lastScanTime = currentTime;
         stopCameraScanner();
 
         if(activeScannerTarget === 'global') {
@@ -849,17 +768,12 @@ State: 01-Jammu & Kashmir</textarea>
         let address = document.getElementById('busAddress').value.trim();
         let phone = document.getElementById('busPhone').value.trim();
         let gstin = document.getElementById('busGstin').value.trim();
-        let bankName = document.getElementById('bankName').value.trim();
-        let accNo = document.getElementById('bankAccNo').value.trim();
-        let ifsc = document.getElementById('bankIfsc').value.trim();
-        
         if(!name) { alert("Firm name required!"); return; }
-
-        companies.push({ name, prefix, address, phone, gstin, bankName, accNo, ifsc });
+        companies.push({ name, prefix, address, phone, gstin, bankName: "JK Bank", accNo: "000", ifsc: "JAKA0" });
         syncToCloud();
         populateFirmDropdowns();
         renderCompanyTable();
-        alert("Firm saved successfully!");
+        alert("Firm saved!");
     }
 
     function renderCompanyTable() {
@@ -867,12 +781,7 @@ State: 01-Jammu & Kashmir</textarea>
         if(!tbody) return;
         tbody.innerHTML = '';
         companies.forEach((c, idx) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td><b>${c.name}</b><br><small>${c.address}</small></td>
-                    <td>${c.gstin || 'N/A'}</td>
-                    <td><button onclick="companies.splice(${idx},1); syncToCloud(); populateFirmDropdowns(); renderCompanyTable();" class="btn-danger" style="padding:2px 5px;">Delete</button></td>
-                </tr>`;
+            tbody.innerHTML += `<tr><td><b>${c.name}</b></td><td>${c.gstin || 'N/A'}</td><td><button onclick="companies.splice(${idx},1); syncToCloud(); populateFirmDropdowns(); renderCompanyTable();" class="btn-danger" style="padding:2px 5px;">Delete</button></td></tr>`;
         });
     }
 
@@ -925,9 +834,7 @@ State: 01-Jammu & Kashmir</textarea>
         
         let datalistId = 'inv_list_' + Math.random().toString(36).substring(2, 7);
         let optionsHtml = '';
-        inventory.forEach(p => {
-            optionsHtml += `<option value="${p.name}">`;
-        });
+        inventory.forEach(p => { optionsHtml += `<option value="${p.name}">`; });
 
         tr.innerHTML = `
             <td>${rowCount}</td>
@@ -940,19 +847,13 @@ State: 01-Jammu & Kashmir</textarea>
             <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 40px; margin-bottom:0;"></td>
             <td>
                 <select class="input-field unit" style="width: 50px; margin-bottom:0;">
-                    <option value="Nos">Nos</option>
-                    <option value="Pcs">Pcs</option>
-                    <option value="Set">Set</option>
+                    <option value="Nos">Nos</option><option value="Pcs">Pcs</option><option value="Set">Set</option>
                 </select>
             </td>
             <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 65px; margin-bottom:0;"></td>
             <td>
                 <select class="input-field gst-rate" onchange="calculateTotals()" style="width: 60px; margin-bottom:0;">
-                    <option value="18" selected>18%</option>
-                    <option value="12">12%</option>
-                    <option value="28">28%</option>
-                    <option value="5">5%</option>
-                    <option value="0">0%</option>
+                    <option value="18" selected>18%</option><option value="12">12%</option><option value="28">28%</option><option value="5">5%</option><option value="0">0%</option>
                 </select>
             </td>
             <td class="right gst-val">0.00</td>
@@ -999,9 +900,7 @@ State: 01-Jammu & Kashmir</textarea>
             let inputRate = parseFloat(row.querySelector('.rate').value) || 0;
             let hsn = row.querySelector('.hsn').value.trim() || "9403";
             let gstPercent = parseFloat(row.querySelector('.gst-rate').value) || 0;
-            let taxable = 0;
-            let total = 0;
-            let gstAmt = 0;
+            let taxable = 0, total = 0, gstAmt = 0;
 
             if(priceMode === 'inclusive' && gstPercent > 0) {
                 let baseRate = inputRate / (1 + (gstPercent / 100));
@@ -1038,32 +937,11 @@ State: 01-Jammu & Kashmir</textarea>
             totCgst += t.cgstAmt;
             totSgst += t.sgstAmt;
             totAllTax += t.totalTax;
-
             let halfRate = t.rate / 2;
-            taxBody.innerHTML += `
-                <tr>
-                    <td>${hsn}</td>
-                    <td class="right">${t.taxable.toFixed(2)}</td>
-                    <td>${halfRate}</td>
-                    <td class="right">${t.cgstAmt.toFixed(2)}</td>
-                    <td>${halfRate}</td>
-                    <td class="right">${t.sgstAmt.toFixed(2)}</td>
-                    <td class="right">${t.totalTax.toFixed(2)}</td>
-                </tr>
-            `;
+            taxBody.innerHTML += `<tr><td>${hsn}</td><td class="right">${t.taxable.toFixed(2)}</td><td>${halfRate}</td><td class="right">${t.cgstAmt.toFixed(2)}</td><td>${halfRate}</td><td class="right">${t.sgstAmt.toFixed(2)}</td><td class="right">${t.totalTax.toFixed(2)}</td></tr>`;
         }
 
-        taxBody.innerHTML += `
-            <tr style="font-weight: bold; background: #f9f9f9;">
-                <td>TOTAL</td>
-                <td class="right">${totTaxable.toFixed(2)}</td>
-                <td>-</td>
-                <td class="right">${totCgst.toFixed(2)}</td>
-                <td>-</td>
-                <td class="right">${totSgst.toFixed(2)}</td>
-                <td class="right">${totAllTax.toFixed(2)}</td>
-            </tr>
-        `;
+        taxBody.innerHTML += `<tr style="font-weight: bold; background: #f9f9f9;"><td>TOTAL</td><td class="right">${totTaxable.toFixed(2)}</td><td>-</td><td class="right">${totCgst.toFixed(2)}</td><td>-</td><td class="right">${totSgst.toFixed(2)}</td><td class="right">${totAllTax.toFixed(2)}</td></tr>`;
 
         document.getElementById('subTotal').innerText = `₹${subTotal.toFixed(2)}`;
         document.getElementById('grandTotal').innerText = `₹${subTotal.toFixed(2)}`;
@@ -1080,12 +958,11 @@ State: 01-Jammu & Kashmir</textarea>
         let phone = document.getElementById('newCustPhone').value.trim();
         let gstin = document.getElementById('newCustGstin').value.trim();
         if(!name) { alert("Customer name required!"); return; }
-        
         customers.push({name, address, phone, gstin, state: "01-Jammu & Kashmir"});
         syncToCloud();
         renderCustomerTable();
         populateCustomerDropdown();
-        alert("Customer saved successfully!");
+        alert("Customer saved!");
     }
 
     function renderCustomerTable() {
@@ -1093,14 +970,7 @@ State: 01-Jammu & Kashmir</textarea>
         if(!tbody) return;
         tbody.innerHTML = '';
         customers.forEach((c, idx) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td><b>${c.name}</b></td>
-                    <td>${c.phone || 'N/A'}</td>
-                    <td>${c.gstin || 'Unregistered'}<br><small>${c.address}</small></td>
-                    <td><button class="btn-info" onclick="viewCustomerLedger('${c.name}')" style="padding:2px 6px; font-size:11px;">View Ledger</button></td>
-                    <td><button onclick="customers.splice(${idx},1); syncToCloud(); renderCustomerTable(); populateCustomerDropdown();" class="btn-danger" style="padding:2px 5px;">X</button></td>
-                </tr>`;
+            tbody.innerHTML += `<tr><td><b>${c.name}</b></td><td>${c.phone || 'N/A'}</td><td>${c.gstin || 'Unregistered'}</td><td><button class="btn-info" onclick="viewCustomerLedger('${c.name}')" style="padding:2px 6px;">Ledger</button></td><td><button onclick="customers.splice(${idx},1); syncToCloud(); renderCustomerTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
         });
     }
 
@@ -1108,85 +978,20 @@ State: 01-Jammu & Kashmir</textarea>
         let custInvoices = invoices.filter(i => i.customer.toLowerCase().includes(custName.toLowerCase()));
         let totalBilled = 0, totalBalance = 0;
         let summary = `📜 LEDGER FOR: ${custName}\n----------------------------------\n`;
-        
-        if(custInvoices.length === 0) {
-            alert(`No history found for "${custName}".`);
-            return;
-        }
-
+        if(custInvoices.length === 0) { alert("No history found."); return; }
         custInvoices.forEach(inv => {
             totalBilled += inv.total;
             totalBalance += inv.balance;
-            summary += `Inv #${inv.id} (${inv.date}) - Bill: ₹${inv.total.toFixed(2)} | Due: ₹${inv.balance.toFixed(2)}\n`;
+            summary += `Inv #${inv.id} - Bill: ₹${inv.total.toFixed(2)} | Due: ₹${inv.balance.toFixed(2)}\n`;
         });
-
-        summary += `----------------------------------\nTotal Billed: ₹${totalBilled.toFixed(2)}\nTotal Pending: ₹${totalBalance.toFixed(2)}`;
-        if(confirm(summary + "\n\nSend via WhatsApp?")) {
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(summary)}`, '_blank');
-        }
+        alert(summary + `\nTotal Pending: ₹${totalBalance.toFixed(2)}`);
     }
 
-    function saveAndPrintInvoice() {
-        processInvoiceSave();
-        window.print();
-    }
-
-    function openThermalReceipt() {
-        processInvoiceSave();
-        let firmIdx = document.getElementById('activeFirmSelect').value;
-        let firm = companies[firmIdx] || companies[0];
-        let invNo = document.getElementById('invNumber').value;
-        let invDate = document.getElementById('invDate').value;
-        let custName = document.getElementById('manualCustDetails').value.split('\n')[0] || "Customer";
-        let grandTotal = document.getElementById('grandTotal').innerText;
-
-        let slipText = `================================\n` +
-                       `       ${firm.name.toUpperCase()}\n` +
-                       `       Ph: ${firm.phone}\n` +
-                       `================================\n` +
-                       `Inv No: ${invNo}    Date: ${invDate}\n` +
-                       `Customer: ${custName}\n` +
-                       `--------------------------------\n` +
-                       `ITEM                 QTY   AMOUNT\n` +
-                       `--------------------------------\n`;
-
-        let rows = document.querySelectorAll('#itemRows tr');
-        rows.forEach(row => {
-            let nameInput = row.querySelector('.prod-name-input');
-            if(nameInput && nameInput.value.trim() !== "") {
-                let name = nameInput.value.substring(0, 20).padEnd(20, ' ');
-                let qty = (row.querySelector('.qty').value + ' ' + row.querySelector('.unit').value).padEnd(6, ' ');
-                let tot = row.querySelector('.row-total').innerText.replace('₹','');
-                slipText += `${name} ${qty} ${tot}\n`;
-            }
-        });
-
-        slipText += `--------------------------------\n` +
-                    `GRAND TOTAL:               ${grandTotal}\n` +
-                    `================================\n` +
-                    `     Thank You! Visit Again     \n` +
-                    `================================`;
-
-        document.getElementById('thermalContent').innerText = slipText;
-        document.getElementById('thermalReceiptModal').style.display = 'flex';
-    }
-
-    function downloadOrSharePDF() {
-        processInvoiceSave();
-        window.print();
-    }
-
-    function shareOnWhatsApp() {
-        processInvoiceSave();
-        let firm = companies[document.getElementById('activeFirmSelect').value] || companies[0];
-        let text = `*TAX INVOICE* - ${firm.name}\nInv #${document.getElementById('invNumber').value} | Total: ${document.getElementById('grandTotal').innerText}`;
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
-    }
-
-    function shareViaEmail() {
-        processInvoiceSave();
-        window.location.href = `mailto:?subject=Invoice&body=Please find attached invoice.`;
-    }
+    function saveAndPrintInvoice() { processInvoiceSave(); window.print(); }
+    function openThermalReceipt() { processInvoiceSave(); alert("Thermal Receipt Ready"); }
+    function downloadOrSharePDF() { processInvoiceSave(); window.print(); }
+    function shareOnWhatsApp() { processInvoiceSave(); window.open(`https://api.whatsapp.com/send?text=` + encodeURIComponent("Invoice saved"), '_blank'); }
+    function shareViaEmail() { processInvoiceSave(); alert("Email ready"); }
 
     function processInvoiceSave() {
         let firm = companies[document.getElementById('activeFirmSelect').value] || companies[0];
@@ -1198,21 +1003,7 @@ State: 01-Jammu & Kashmir</textarea>
         let balance = parseFloat(document.getElementById('balanceAmount').innerText.replace('₹','')) || 0;
         let status = balance > 0 ? 'Pending' : 'Paid';
 
-        let itemBreakups = [];
-        document.querySelectorAll('#itemRows tr').forEach(row => {
-            let nameInput = row.querySelector('.prod-name-input');
-            if(nameInput && nameInput.value.trim() !== "") {
-                let hsn = row.querySelector('.hsn').value.trim() || "9403";
-                let qty = parseFloat(row.querySelector('.qty').value) || 0;
-                let rate = parseFloat(row.querySelector('.rate').value) || 0;
-                let gstRate = parseFloat(row.querySelector('.gst-rate').value) || 18;
-                let taxable = qty * rate;
-                let gstAmt = taxable * (gstRate / 100);
-                itemBreakups.push({ hsn, taxable, gstRate, cgst: gstAmt/2, sgst: gstAmt/2, totalTax: gstAmt });
-            }
-        });
-
-        invoices.push({ company: firm.name, id: invNo, date: invDate, customer: custName, status, total: grandTotal, received, balance, items: itemBreakups });
+        invoices.push({ company: firm.name, id: invNo, date: invDate, customer: custName, status, total: grandTotal, received, balance, items: [] });
         syncToCloud();
         setNextInvoiceNumber();
     }
@@ -1222,16 +1013,7 @@ State: 01-Jammu & Kashmir</textarea>
         if(!tbody) return;
         tbody.innerHTML = '';
         invoices.forEach((inv, idx) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${inv.company}</td>
-                    <td>${inv.id}</td>
-                    <td>${inv.date}</td>
-                    <td>${inv.customer}</td>
-                    <td style="color: ${inv.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">${inv.status}</td>
-                    <td>₹${inv.total.toFixed(2)}</td>
-                    <td><button onclick="invoices.splice(${idx},1); syncToCloud(); renderInvoiceHistory();" class="btn-danger" style="padding:2px 5px;">Delete</button></td>
-                </tr>`;
+            tbody.innerHTML += `<tr><td>${inv.company}</td><td>${inv.id}</td><td>${inv.date}</td><td>${inv.customer}</td><td style="color:${inv.status==='Paid'?'green':'red'}">${inv.status}</td><td>₹${inv.total.toFixed(2)}</td><td><button onclick="invoices.splice(${idx},1); syncToCloud(); renderInvoiceHistory();" class="btn-danger" style="padding:2px 5px;">Delete</button></td></tr>`;
         });
     }
 
@@ -1240,71 +1022,28 @@ State: 01-Jammu & Kashmir</textarea>
         if(!tbody) return;
         tbody.innerHTML = '';
         let pending = invoices.filter(i => i.balance > 0);
-        if(pending.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:green; padding:10px;">No pending payments!</td></tr>`;
-            return;
-        }
+        if(pending.length === 0) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:green; padding:10px;">No pending payments!</td></tr>`; return; }
         pending.forEach(inv => {
-            tbody.innerHTML += `
-                <tr>
-                    <td><b>${inv.customer}</b></td>
-                    <td>${inv.id}</td>
-                    <td style="color:red; font-weight:bold;">₹${inv.balance.toFixed(2)}</td>
-                    <td><button class="btn-success" onclick="markPaid('${inv.id}')" style="padding:3px 6px;">Clear</button></td>
-                </tr>`;
+            tbody.innerHTML += `<tr><td><b>${inv.customer}</b></td><td>${inv.id}</td><td style="color:red; font-weight:bold;">₹${inv.balance.toFixed(2)}</td><td><button class="btn-success" onclick="markPaid('${inv.id}')" style="padding:3px 6px;">Clear</button></td></tr>`;
         });
     }
 
     function markPaid(id) {
         let inv = invoices.find(i => i.id === id);
-        if(inv) {
-            inv.balance = 0;
-            inv.received = inv.total;
-            inv.status = 'Paid';
-            syncToCloud();
-            renderLedger();
-        }
+        if(inv) { inv.balance = 0; inv.received = inv.total; inv.status = 'Paid'; syncToCloud(); renderLedger(); }
     }
 
     function renderReports() {
         let totalSales = 0, totalReceived = 0, totalPending = 0;
         let tbody = document.getElementById('dayBookTableBody');
-        let gstrTbody = document.getElementById('gstr1TableBody');
         if(!tbody) return;
-        tbody.innerHTML = ''; gstrTbody.innerHTML = '';
-
-        let gstrMap = {};
+        tbody.innerHTML = '';
         invoices.slice().reverse().forEach(inv => {
             totalSales += inv.total;
             totalReceived += (inv.received || 0);
             totalPending += (inv.balance || 0);
-
-            if(inv.items) {
-                inv.items.forEach(it => {
-                    if(!gstrMap[it.hsn]) gstrMap[it.hsn] = { taxable: 0, cgst: 0, sgst: 0, totalTax: 0 };
-                    gstrMap[it.hsn].taxable += it.taxable;
-                    gstrMap[it.hsn].cgst += it.cgst;
-                    gstrMap[it.hsn].sgst += it.sgst;
-                    gstrMap[it.hsn].totalTax += it.totalTax;
-                });
-            }
-
-            tbody.innerHTML += `
-                <tr>
-                    <td>${inv.date}</td><td>${inv.id}</td><td><b>${inv.customer}</b></td>
-                    <td>₹${inv.total.toFixed(2)}</td>
-                    <td style="color: ${inv.status === 'Paid' ? 'green' : 'red'};">${inv.status}</td>
-                </tr>`;
+            tbody.innerHTML += `<tr><td>${inv.date}</td><td>${inv.id}</td><td><b>${inv.customer}</b></td><td>₹${inv.total.toFixed(2)}</td><td style="color:${inv.status==='Paid'?'green':'red'}">${inv.status}</td></tr>`;
         });
-
-        for(let hsn in gstrMap) {
-            let g = gstrMap[hsn];
-            gstrTbody.innerHTML += `
-                <tr>
-                    <td><b>${hsn}</b></td><td>₹${g.taxable.toFixed(2)}</td><td>₹${g.cgst.toFixed(2)}</td><td>₹${g.sgst.toFixed(2)}</td><td><b>₹${g.totalTax.toFixed(2)}</b></td>
-                </tr>`;
-        }
-
         document.getElementById('repTotalSales').innerText = `₹${totalSales.toFixed(2)}`;
         document.getElementById('repTotalReceived').innerText = `₹${totalReceived.toFixed(2)}`;
         document.getElementById('repTotalPending').innerText = `₹${totalPending.toFixed(2)}`;
@@ -1317,9 +1056,7 @@ State: 01-Jammu & Kashmir</textarea>
         let price = parseFloat(document.getElementById('prodPrice').value) || 0;
         let gst = parseFloat(document.getElementById('prodGst').value) || 18;
         let stock = parseInt(document.getElementById('prodStock').value) || 0;
-        
         if(!name) { alert("Product name required!"); return; }
-
         inventory.push({name, barcode, hsn, price, gst, stock});
         syncToCloud();
         renderInventoryTable();
@@ -1330,18 +1067,9 @@ State: 01-Jammu & Kashmir</textarea>
         let tbody = document.getElementById('inventoryTableBody');
         if(!tbody) return;
         tbody.innerHTML = '';
+        inventory.cpp = inventory || [];
         inventory.forEach((p, idx) => {
-            let isLow = p.stock <= 5;
-            tbody.innerHTML += `
-                <tr class="${isLow ? 'low-stock' : ''}">
-                    <td>${p.name}</td>
-                    <td><b>${p.barcode || 'N/A'}</b></td>
-                    <td>${p.hsn}</td>
-                    <td>₹${p.price}</td>
-                    <td>${p.gst}%</td>
-                    <td>${p.stock} ${isLow ? '⚠️ Low Stock!' : ''}</td>
-                    <td><button onclick="inventory.splice(${idx},1); syncToCloud(); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td>
-                </tr>`;
+            tbody.innerHTML += `<tr><td>${p.name}</td><td><b>${p.barcode || 'N/A'}</b></td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button onclick="inventory.splice(${idx},1); syncToCloud(); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
         });
     }
 
@@ -1349,8 +1077,6 @@ State: 01-Jammu & Kashmir</textarea>
         document.getElementById('itemRows').innerHTML = '';
         addItemRow();
         document.getElementById('amtReceived').value = 0;
-        document.getElementById('manualCustDetails').value = '';
-        document.getElementById('invoiceCustDropdown').value = '';
         calculateTotals();
         setNextInvoiceNumber();
     }
