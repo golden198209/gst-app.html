@@ -162,7 +162,7 @@
             body { background-color: #fff; padding: 0; }
             .container, .invoice-box { box-shadow: none; border: none; padding: 0; max-width: 100%; }
             .tab-buttons, .no-print, .settings-bar { display: none; }
-            .input-field, select, textarea { border: none; background: transparent; appearance: none; }
+            .input-field, select, textarea { border: none; background: transparent; appearance: none; resize: none; }
         }
     </style>
 </head>
@@ -214,35 +214,19 @@
                 </tr>
             </table>
 
-            <!-- Bill To & Details Split Box -->
+            <!-- Bill To & Customer Details Split Box -->
             <table class="split-table">
                 <tr>
                     <td>
-                        <strong>Bill To (Type GSTIN to Auto-fill):</strong><br>
-                        <label style="font-size:10px; color:#555;">Customer GSTIN:</label>
-                        <input type="text" id="custGstinInput" class="input-field" list="gstinList" placeholder="Type GSTIN to auto-fill name/address" oninput="onGstinInput()" style="margin-bottom:4px;">
-                        <datalist id="gstinList"></datalist>
-
-                        <label style="font-size:10px; color:#555;">Or Choose Customer Name:</label>
-                        <select id="customerSelect" class="input-field" onchange="loadCustomerDetails()" style="margin-top: 2px;">
-                            <option value="">-- Choose Customer --</option>
-                        </select>
-                        <div id="customerInfo" class="sub-text" style="margin-top: 4px;"></div>
+                        <strong>Bill To (Customer Details):</strong><br>
+                        <textarea id="manualCustDetails" class="input-field" rows="4" placeholder="Enter Customer Name, Address, GSTIN, State etc." style="margin-top: 4px; font-family: Arial, sans-serif;">PRINCIPAL KV HUMHAMA
+STC BSF CAMPUS, HUMHAMA, Budgam, JAMMU & KASHMIR-190007, India
+GSTIN: Unregistered
+State: 01-Jammu & Kashmir</textarea>
                     </td>
                     <td>
-                        <strong>Payment Mode:</strong>
-                        <select id="payMode" class="input-field" style="margin-top: 4px;">
-                            <option value="Credit" selected>Credit (Udhaar)</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Online / UPI">Online / UPI</option>
-                            <option value="Cheque">Cheque</option>
-                        </select>
-                        <br>
-                        <strong>Payment Status:</strong>
-                        <select id="payStatus" class="input-field">
-                            <option value="Pending">Pending (Lena Hai)</option>
-                            <option value="Paid">Paid</option>
-                        </select>
+                        <strong>Notes / Remarks:</strong>
+                        <textarea id="invoiceRemarks" class="input-field" rows="4" placeholder="Optional notes or dispatch details..." style="margin-top: 4px; font-family: Arial, sans-serif;"></textarea>
                     </td>
                 </tr>
             </table>
@@ -379,8 +363,7 @@
         <table class="items-table">
             <thead>
                 <tr>
-                    <th>Customer Name</th>
-                    <th>Phone</th>
+                    <th>Customer Name / Details</th>
                     <th>Invoice No.</th>
                     <th>Balance Amount (₹)</th>
                     <th>Action</th>
@@ -487,9 +470,7 @@
         }
     ];
 
-    let customers = JSON.parse(localStorage.getItem('gs_customers')) || [
-        { name: "new vision enterprise", address: "1ST FLOOR TILE MARKET ROAD Srinagar", phone: "", gstin: "01CPMPM6255G1ZV" }
-    ];
+    let customers = JSON.parse(localStorage.getItem('gs_customers')) || [];
     let inventory = JSON.parse(localStorage.getItem('gs_inventory')) || [
         { name: "Steel almirah big one", hsn: "9403", price: 9322.03, gst: 18, stock: 10 },
         { name: "Almirah small", hsn: "9403", price: 5508.47, gst: 18, stock: 15 }
@@ -499,8 +480,8 @@
     document.getElementById('invDate').valueAsDate = new Date();
     populateFirmDropdowns();
     onFirmChange();
-    populateCustomerDropdown();
     renderCompanyTable();
+    renderCustomerList();
     addItemRow();
 
     function switchTab(tab, event) {
@@ -712,54 +693,11 @@
         return num.toLocaleString('en-IN') + " Rupees Only";
     }
 
-    function populateCustomerDropdown() {
-        let select = document.getElementById('customerSelect');
-        let datalist = document.getElementById('gstinList');
-        select.innerHTML = '<option value="">-- Choose Customer --</option>';
-        datalist.innerHTML = '';
-
-        customers.forEach((c, idx) => {
-            select.innerHTML += `<option value="${idx}">${c.name} (${c.gstin || 'No GSTIN'})</option>`;
-            if(c.gstin) {
-                datalist.innerHTML += `<option value="${c.gstin}">${c.name}</option>`;
-            }
-        });
-    }
-
-    function loadCustomerDetails() {
-        let idx = document.getElementById('customerSelect').value;
-        if(idx === "") { 
-            document.getElementById('customerInfo').innerHTML = ""; 
-            document.getElementById('custGstinInput').value = "";
-            return; 
-        }
-        let c = customers[idx];
-        document.getElementById('custGstinInput').value = c.gstin || "";
-        document.getElementById('customerInfo').innerHTML = `<strong>${c.name}</strong><br>${c.address}<br><strong>GSTIN:</strong> ${c.gstin || 'Unregistered'}<br><strong>State:</strong> 01-Jammu & Kashmir`;
-    }
-
-    function onGstinInput() {
-        let gstinVal = document.getElementById('custGstinInput').value.trim();
-        let foundCust = customers.find(c => c.gstin && c.gstin.toLowerCase() === gstinVal.toLowerCase());
-        if(foundCust) {
-            let idx = customers.indexOf(foundCust);
-            document.getElementById('customerSelect').value = idx;
-            document.getElementById('customerInfo').innerHTML = `<strong>${foundCust.name}</strong><br>${foundCust.address}<br><strong>GSTIN:</strong> ${foundCust.gstin}<br><strong>State:</strong> 01-Jammu & Kashmir`;
-        } else {
-            document.getElementById('customerSelect').value = "";
-            if(gstinVal.length > 5) {
-                document.getElementById('customerInfo').innerHTML = `<strong>New Customer / Unregistered</strong><br>GSTIN: ${gstinVal}`;
-            } else {
-                document.getElementById('customerInfo').innerHTML = "";
-            }
-        }
-    }
-
     function renderCustomerList() {
         let list = document.getElementById('customerList');
         list.innerHTML = '';
         customers.forEach((c, idx) => {
-            list.innerHTML += `<li><b>${c.name}</b> [GSTIN: ${c.gstin || 'N/A'}] - ${c.address} <button onclick="customers.splice(${idx},1); localStorage.setItem('gs_customers', JSON.stringify(customers)); populateCustomerDropdown(); renderCustomerList();" class="btn-danger" style="padding:1px 4px; font-size:10px;">X</button></li>`;
+            list.innerHTML += `<li><b>${c.name}</b> [GSTIN: ${c.gstin || 'N/A'}] - ${c.address} <button onclick="customers.splice(${idx},1); localStorage.setItem('gs_customers', JSON.stringify(customers)); renderCustomerList();" class="btn-danger" style="padding:1px 4px; font-size:10px;">X</button></li>`;
         });
     }
 
@@ -779,7 +717,7 @@
         let firm = companies[firmIdx] || companies[0];
         let invNo = document.getElementById('invNumber').value;
         let invDate = document.getElementById('invDate').value;
-        let custText = document.getElementById('customerInfo').innerText.replace(/\n/g, ' - ') || "Walk-in Customer";
+        let custText = document.getElementById('manualCustDetails').value.replace(/\n/g, ' - ');
         let grandTotal = document.getElementById('grandTotal').innerText;
         let balance = document.getElementById('balanceAmount').innerText;
 
@@ -836,8 +774,11 @@
         let firm = companies[firmIdx] || companies[0];
         let invNo = document.getElementById('invNumber').value;
         let invDate = document.getElementById('invDate').value;
-        let custIdx = document.getElementById('customerSelect').value;
-        let custName = custIdx !== "" ? customers[custIdx].name : "Walk-in Customer";
+        
+        // Extract first line of manual customer details as customer name for history
+        let custLines = document.getElementById('manualCustDetails').value.trim().split('\n');
+        let custName = custLines[0] || "Walk-in Customer";
+
         let grandTotalText = document.getElementById('grandTotal').innerText.replace('₹','');
         let grandTotal = parseFloat(grandTotalText) || 0;
         let balance = parseFloat(document.getElementById('balanceAmount').innerText.replace('₹','')) || 0;
@@ -879,14 +820,13 @@
         tbody.innerHTML = '';
         let pending = invoices.filter(i => i.balance > 0);
         if(pending.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:green; padding:10px;">No pending payments!</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:green; padding:10px;">No pending payments!</td></tr>`;
             return;
         }
         pending.forEach(inv => {
             tbody.innerHTML += `
                 <tr>
                     <td><b>${inv.customer}</b></td>
-                    <td>-</td>
                     <td>${inv.id}</td>
                     <td style="color:red; font-weight:bold;">₹${inv.balance.toFixed(2)}</td>
                     <td><button class="btn-success" onclick="markPaid('${inv.id}')" style="padding:3px 6px; font-size:11px;">Clear</button></td>
@@ -912,7 +852,6 @@
         if(!name) return;
         customers.push({name, address, phone, gstin});
         localStorage.setItem('gs_customers', JSON.stringify(customers));
-        populateCustomerDropdown();
         renderCustomerList();
         alert("Customer saved!");
     }
@@ -942,9 +881,8 @@
         document.getElementById('itemRows').innerHTML = '';
         addItemRow();
         document.getElementById('amtReceived').value = 0;
-        document.getElementById('custGstinInput').value = '';
-        document.getElementById('customerSelect').value = '';
-        document.getElementById('customerInfo').innerHTML = '';
+        document.getElementById('manualCustDetails').value = '';
+        document.getElementById('invoiceRemarks').value = '';
         calculateTotals();
     }
 </script>
