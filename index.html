@@ -3,18 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Tax Invoice PDF</title>
+    <title>Dynamic Invoice Generator</title>
     <!-- html2pdf Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background: #f4f6f9; }
-        .invoice-box { max-width: 800px; margin: auto; background: #fff; padding: 30px; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .container { max-width: 800px; margin: auto; }
+        .controls-box, .invoice-box { background: #fff; padding: 20px; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-radius: 6px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background: #fff; cursor: pointer; }
         .header { display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #333; padding: 8px; text-align: left; font-size: 13px; }
         th { background: #eee; }
         .text-right { text-align: right; }
-        .btn-container { max-width: 800px; margin: 15px auto; display: flex; gap: 10px; }
+        .btn-container { display: flex; gap: 10px; margin-top: 15px; }
         .btn { padding: 10px 20px; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-pdf { background: #17a2b8; }
         .btn-wa { background: #25d366; }
@@ -22,57 +26,108 @@
 </head>
 <body>
 
-<div class="btn-container">
-    <button class="btn btn-pdf" onclick="downloadInvoicePDF()">📥 Download PDF</button>
-    <button class="btn btn-wa" onclick="shareWhatsApp()">📱 Share on WhatsApp</button>
-</div>
+<div class="container">
+    <!-- Selection Controls (Dropdowns) -->
+    <div class="controls-box">
+        <h3>Invoice Settings</h3>
+        <div class="form-group">
+            <label for="firmSelect">Select Your Firm:</label>
+            <select id="firmSelect" onchange="updateFirmDetails()">
+                <option value="golden">Golden Star Furniture & Interior</option>
+                <option value="clapsmile">Clapsmile (Toys & Games)</option>
+            </select>
+        </div>
 
-<!-- Invoice Area to Print/PDF -->
-<div class="invoice-box" id="pdfContent">
-    <div class="header">
+        <div class="form-group">
+            <label for="customerSelect">Bill To (Customer):</label>
+            <select id="customerSelect" onchange="updateCustomerDetails()">
+                <option value="kv">PRINCIPAL KV HUMHAMA (Budgam)</option>
+                <option value="other">Other Local Customer</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="btn-container" style="margin-top: 0; margin-bottom: 15px;">
+        <button class="btn btn-pdf" onclick="downloadInvoicePDF()">📥 Download PDF</button>
+        <button class="btn btn-wa" onclick="shareWhatsApp()">📱 Share on WhatsApp</button>
+    </div>
+
+    <!-- Invoice Area -->
+    <div class="invoice-box" id="pdfContent">
+        <div class="header">
+            <div>
+                <h2 id="firmName">Golden Star Furniture & Interior</h2>
+                <p id="firmAddress">Lal Chowk, Srinagar, J&K<br>Phone: 7006688390</p>
+            </div>
+            <div class="text-right">
+                <h3>TAX INVOICE</h3>
+                <p><strong>Invoice No:</strong> 001<br><strong>Date:</strong> 18-Sep-2026</p>
+            </div>
+        </div>
+
         <div>
-            <h2>Golden Star Furniture & Interior</h2>
-            <p>Lal Chowk, Srinagar, J&K<br>Phone: 7006688390</p>
+            <p><strong>Bill To:</strong><br><span id="customerDetails">PRINCIPAL KV HUMHAMA<br>Budgam, Jammu & Kashmir</span></p>
         </div>
-        <div class="text-right">
-            <h3>TAX INVOICE</h3>
-            <p><strong>Invoice No:</strong> 001<br><strong>Date:</strong> 18-Sep-2026</p>
-        </div>
-    </div>
 
-    <div>
-        <p><strong>Bill To:</strong><br>PRINCIPAL KV HUMHAMA<br>Budgam, Jammu & Kashmir</p>
-    </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Item Description</th>
+                    <th>Qty</th>
+                    <th>Rate (₹)</th>
+                    <th>Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Wooden / Steel Product as per Order</td>
+                    <td>1</td>
+                    <td>9,322.03</td>
+                    <td>9,322.03</td>
+                </tr>
+            </tbody>
+        </table>
 
-    <table>
-        <thead>
+        <table style="margin-top: 20px; border: none;">
             <tr>
-                <th>#</th>
-                <th>Item Description</th>
-                <th>Qty</th>
-                <th>Rate (₹)</th>
-                <th>Amount (₹)</th>
+                <td style="border: none;" class="text-right"><strong>Grand Total: ₹9,322.03</strong></td>
             </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>1</td>
-                <td>Steel Almirah Big Size</td>
-                <td>1</td>
-                <td>9,322.03</td>
-                <td>9,322.03</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <table style="margin-top: 20px; border: none;">
-        <tr>
-            <td style="border: none;" class="text-right"><strong>Grand Total: ₹9,322.03</strong></td>
-        </tr>
-    </table>
+        </table>
+    </div>
 </div>
 
 <script>
+    // Firm Data
+    const firms = {
+        golden: {
+            name: "Golden Star Furniture & Interior",
+            address: "Lal Chowk, Srinagar, J&K<br>Phone: 7006688390"
+        },
+        clapsmile: {
+            name: "Clapsmile (Toys & Home Decor)",
+            address: "Online Wholesale Division<br>Phone: 7006688390"
+        }
+    };
+
+    // Customer Data
+    const customers = {
+        kv: "PRINCIPAL KV HUMHAMA<br>Budgam, Jammu & Kashmir",
+        other: "Walk-in Customer / Retail Buyer<br>Srinagar, J&K"
+    };
+
+    function updateFirmDetails() {
+        const val = document.getElementById('firmSelect').value;
+        document.getElementById('firmName').innerHTML = firms[val].name;
+        document.getElementById('firmAddress').innerHTML = firms[val].address;
+    }
+
+    function updateCustomerDetails() {
+        const val = document.getElementById('customerSelect').value;
+        document.getElementById('customerDetails').innerHTML = customers[val];
+    }
+
     function downloadInvoicePDF() {
         const element = document.getElementById('pdfContent');
         const opt = {
@@ -86,7 +141,9 @@
     }
 
     function shareWhatsApp() {
-        let msg = "Hello, here is your Tax Invoice from Golden Star Furniture. Total Amount: ₹9,322.03. Thank you!";
+        let firmVal = document.getElementById('firmSelect').value;
+        let firmTitle = firms[firmVal].name;
+        let msg = `Hello, here is your Tax Invoice from ${firmTitle}. Total Amount: ₹9,322.03. Thank you!`;
         let url = `https://api.whatsapp.com/send?text=` + encodeURIComponent(msg);
         window.open(url, '_blank');
     }
