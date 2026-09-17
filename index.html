@@ -535,15 +535,18 @@ State: 01-Jammu & Kashmir</textarea>
     ];
     let invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
 
-    document.getElementById('invDate').valueAsDate = new Date();
-    populateFirmDropdowns();
-    populateCustomerDropdown();
-    onFirmChange();
-    renderCompanyTable();
-    renderCustomerList();
-    renderInventoryTable();
-    addItemRow();
-    setNextInvoiceNumber();
+    // Initialize App on Load
+    window.onload = function() {
+        document.getElementById('invDate').valueAsDate = new Date();
+        populateFirmDropdowns();
+        populateCustomerDropdown();
+        onFirmChange();
+        renderCompanyTable();
+        renderCustomerList();
+        renderInventoryTable();
+        addItemRow();
+        setNextInvoiceNumber();
+    };
 
     function setNextInvoiceNumber() {
         if(invoices.length > 0) {
@@ -563,17 +566,22 @@ State: 01-Jammu & Kashmir</textarea>
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         
-        if(tab === 'invoice') { document.getElementById('invoicePanel').classList.add('active'); event.target.classList.add('active'); }
-        else if(tab === 'history') { document.getElementById('historyPanel').classList.add('active'); event.target.classList.add('active'); renderInvoiceHistory(); }
-        else if(tab === 'ledger') { document.getElementById('ledgerPanel').classList.add('active'); event.target.classList.add('active'); renderLedger(); }
-        else if(tab === 'reports') { document.getElementById('reportsPanel').classList.add('active'); event.target.classList.add('active'); renderReports(); }
-        else if(tab === 'business') { document.getElementById('businessPanel').classList.add('active'); event.target.classList.add('active'); renderCompanyTable(); }
-        else if(tab === 'customers') { document.getElementById('customersPanel').classList.add('active'); event.target.classList.add('active'); renderCustomerList(); }
-        else if(tab === 'inventory') { document.getElementById('inventoryPanel').classList.add('active'); event.target.classList.add('active'); renderInventoryTable(); }
+        if(tab === 'invoice') { document.getElementById('invoicePanel').classList.add('active'); }
+        else if(tab === 'history') { document.getElementById('historyPanel').classList.add('active'); renderInvoiceHistory(); }
+        else if(tab === 'ledger') { document.getElementById('ledgerPanel').classList.add('active'); renderLedger(); }
+        else if(tab === 'reports') { document.getElementById('reportsPanel').classList.add('active'); renderReports(); }
+        else if(tab === 'business') { document.getElementById('businessPanel').classList.add('active'); renderCompanyTable(); }
+        else if(tab === 'customers') { document.getElementById('customersPanel').classList.add('active'); renderCustomerList(); }
+        else if(tab === 'inventory') { document.getElementById('inventoryPanel').classList.add('active'); renderInventoryTable(); }
+
+        if(event && event.target) {
+            event.target.classList.add('active');
+        }
     }
 
     function populateFirmDropdowns() {
         let select = document.getElementById('activeFirmSelect');
+        if(!select) return;
         select.innerHTML = '';
         companies.forEach((comp, idx) => {
             select.innerHTML += `<option value="${idx}">${comp.name}</option>`;
@@ -582,6 +590,7 @@ State: 01-Jammu & Kashmir</textarea>
 
     function populateCustomerDropdown() {
         let select = document.getElementById('invoiceCustDropdown');
+        if(!select) return;
         select.innerHTML = '<option value="">-- Select Customer from List --</option>';
         customers.forEach((cust, idx) => {
             select.innerHTML += `<option value="${idx}">${cust.name}</option>`;
@@ -628,6 +637,7 @@ State: 01-Jammu & Kashmir</textarea>
 
     function renderCompanyTable() {
         let tbody = document.getElementById('companyTableBody');
+        if(!tbody) return;
         tbody.innerHTML = '';
         companies.forEach((c, idx) => {
             tbody.innerHTML += `
@@ -792,6 +802,7 @@ State: 01-Jammu & Kashmir</textarea>
         });
 
         let taxBody = document.getElementById('taxSummaryRows');
+        if(!taxBody) return;
         taxBody.innerHTML = '';
         let totTaxable = 0, totCgst = 0, totSgst = 0, totAllTax = 0;
 
@@ -844,6 +855,7 @@ State: 01-Jammu & Kashmir</textarea>
 
     function renderCustomerList() {
         let list = document.getElementById('customerList');
+        if(!list) return;
         list.innerHTML = '';
         customers.forEach((c, idx) => {
             list.innerHTML += `<li><b>${c.name}</b> [GSTIN: ${c.gstin || 'N/A'}] - ${c.address} <button onclick="customers.splice(${idx},1); localStorage.setItem('gs_customers', JSON.stringify(customers)); renderCustomerList(); populateCustomerDropdown();" class="btn-danger" style="padding:1px 4px; font-size:10px;">X</button></li>`;
@@ -951,6 +963,7 @@ State: 01-Jammu & Kashmir</textarea>
 
     function renderInvoiceHistory() {
         let tbody = document.getElementById('historyTableBody');
+        if(!tbody) return;
         tbody.innerHTML = '';
         invoices.forEach((inv, idx) => {
             tbody.innerHTML += `
@@ -968,6 +981,7 @@ State: 01-Jammu & Kashmir</textarea>
 
     function renderLedger() {
         let tbody = document.getElementById('ledgerTableBody');
+        if(!tbody) return;
         tbody.innerHTML = '';
         let pending = invoices.filter(i => i.balance > 0);
         if(pending.length === 0) {
@@ -1001,6 +1015,7 @@ State: 01-Jammu & Kashmir</textarea>
         let totalReceived = 0;
         let totalPending = 0;
         let tbody = document.getElementById('dayBookTableBody');
+        if(!tbody) return;
         tbody.innerHTML = '';
 
         if(invoices.length === 0) {
@@ -1043,7 +1058,7 @@ State: 01-Jammu & Kashmir</textarea>
 
     function saveProduct() {
         let name = document.getElementById('prodName').value.trim();
-        let barcode = document.getElementById('prodBarcode'].value.trim();
+        let barcode = document.getElementById('prodBarcode').value.trim();
         let hsn = document.getElementById('prodHsn').value.trim();
         let price = parseFloat(document.getElementById('prodPrice').value) || 0;
         let gst = parseFloat(document.getElementById('prodGst').value) || 18;
@@ -1062,6 +1077,7 @@ State: 01-Jammu & Kashmir</textarea>
 
     function renderInventoryTable() {
         let tbody = document.getElementById('inventoryTableBody');
+        if(!tbody) return;
         tbody.innerHTML = '';
         inventory.forEach((p, idx) => {
             tbody.innerHTML += `<tr><td>${p.name}</td><td><b>${p.barcode || 'N/A'}</b></td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button onclick="inventory.splice(${idx},1); localStorage.setItem('gs_inventory', JSON.stringify(inventory)); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
