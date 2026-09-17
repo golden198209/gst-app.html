@@ -190,15 +190,9 @@
     <div id="invoicePanel" class="panel active">
         <div class="invoice-box">
             <!-- Firm Selector Bar -->
-            <div class="box-section no-print" style="margin-bottom: 10px; background: #f9f9f9; display: flex; gap: 15px;">
-                <div style="flex: 1;">
-                    <label><strong>Select Billing Firm:</strong></label>
-                    <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()" style="font-weight: bold; margin-top: 4px;"></select>
-                </div>
-                <div style="flex: 1;" class="no-print">
-                    <label><strong>Select Customer (Quick Fill):</strong></label>
-                    <select id="activeCustomerSelect" class="input-field" onchange="onCustomerSelected()" style="font-weight: bold; margin-top: 4px;"></select>
-                </div>
+            <div class="box-section no-print" style="margin-bottom: 10px; background: #f9f9f9;">
+                <label><strong>Select Billing Firm:</strong></label>
+                <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()" style="font-weight: bold; margin-top: 4px;"></select>
             </div>
 
             <div class="invoice-main-title">Tax Invoice</div>
@@ -224,7 +218,11 @@
             <table class="split-table">
                 <tr>
                     <td>
-                        <strong>Bill To (Customer Details):</strong><br>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;" class="no-print">
+                            <strong>Bill To (Customer Details):</strong>
+                            <select id="invoiceCustDropdown" class="input-field" onchange="onCustomerSelected()" style="width: 55%; margin-bottom: 0; font-weight: bold;"></select>
+                        </div>
+                        <div style="display: none;" class="print-only"><strong>Bill To (Customer Details):</strong></div>
                         <textarea id="manualCustDetails" class="input-field" rows="4" placeholder="Enter Customer Name, Address, GSTIN, State etc." style="margin-top: 4px; font-family: Arial, sans-serif;">PRINCIPAL KV HUMHAMA
 STC BSF CAMPUS, HUMHAMA, Budgam, JAMMU & KASHMIR-190007, India
 GSTIN: Unregistered
@@ -529,15 +527,15 @@ State: 01-Jammu & Kashmir</textarea>
     }
 
     function populateCustomerDropdown() {
-        let select = document.getElementById('activeCustomerSelect');
-        select.innerHTML = '<option value="">-- Select Customer --</option>';
+        let select = document.getElementById('invoiceCustDropdown');
+        select.innerHTML = '<option value="">-- Select Customer from List --</option>';
         customers.forEach((cust, idx) => {
             select.innerHTML += `<option value="${idx}">${cust.name}</option>`;
         });
     }
 
     function onCustomerSelected() {
-        let idx = document.getElementById('activeCustomerSelect').value;
+        let idx = document.getElementById('invoiceCustDropdown').value;
         if(idx === "") return;
         let c = customers[idx];
         let formattedDetails = `${c.name}\n${c.address}\nGSTIN: ${c.gstin || 'Unregistered'}\nState: ${c.state || '01-Jammu & Kashmir'}`;
@@ -906,6 +904,7 @@ State: 01-Jammu & Kashmir</textarea>
         let stock = parseInt(document.getElementById('prodStock').value) || 0;
         if(!name) return;
         inventory.push({name, hsn, price, gst, stock});
+        localStorage.setItem('gs_invoices', JSON.stringify(inventory)); // wait, inventory storage
         localStorage.setItem('gs_inventory', JSON.stringify(inventory));
         renderInventoryTable();
         alert("Product saved!");
@@ -915,7 +914,7 @@ State: 01-Jammu & Kashmir</textarea>
         let tbody = document.getElementById('inventoryTableBody');
         tbody.innerHTML = '';
         inventory.forEach((p, idx) => {
-            tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button onclick="inventory.splice(${idx},1); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button onclick="inventory.splice(${idx},1); localStorage.setItem('gs_inventory', JSON.stringify(inventory)); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
         });
     }
 
@@ -924,8 +923,8 @@ State: 01-Jammu & Kashmir</textarea>
         addItemRow();
         document.getElementById('amtReceived').value = 0;
         document.getElementById('manualCustDetails').value = '';
+        document.getElementById('invoiceCustDropdown').value = '';
         document.getElementById('invoiceRemarks').value = '';
-        document.getElementById('activeCustomerSelect').value = '';
         calculateTotals();
         setNextInvoiceNumber();
     }
