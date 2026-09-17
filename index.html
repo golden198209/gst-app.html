@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tax Invoice - Custom Multi-Firm Generator</title>
+    <title>Tax Invoice - Custom Multi-Firm Generator with Barcode</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -176,7 +176,7 @@
         <button class="tab-btn" onclick="switchTab('ledger', event)">Pending Payments (Udhaar)</button>
         <button class="tab-btn" onclick="switchTab('business', event)">Manage Firms</button>
         <button class="tab-btn" onclick="switchTab('customers', event)">Customers</button>
-        <button class="tab-btn" onclick="switchTab('inventory', event)">Stock</button>
+        <button class="tab-btn" onclick="switchTab('inventory', event)">Stock & Barcode</button>
     </div>
 
     <!-- SETTINGS BAR -->
@@ -184,6 +184,10 @@
         <strong>Price Mode:</strong>
         <label><input type="radio" name="priceMode" value="exclusive" checked onchange="calculateTotals()"> Without GST (Exclusive)</label>
         <label><input type="radio" name="priceMode" value="inclusive" onchange="calculateTotals()"> With GST (Inclusive)</label>
+        
+        <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="globalBarcodeScan" class="input-field" placeholder="🔍 Scan Barcode / Type Item Name here..." onkeypress="handleGlobalBarcode(event)" style="margin-bottom: 0; width: 280px; font-weight: bold;">
+        </div>
     </div>
 
     <!-- 1. INVOICE PANEL -->
@@ -240,13 +244,14 @@ State: 01-Jammu & Kashmir</textarea>
                 <thead>
                     <tr>
                         <th style="width: 4%;">#</th>
-                        <th style="width: 28%;">Item Name</th>
+                        <th style="width: 24%;">Item Name</th>
+                        <th style="width: 10%;">Barcode</th>
                         <th style="width: 10%;">HSN/SAC</th>
                         <th style="width: 7%;">Qty</th>
                         <th style="width: 7%;">Unit</th>
-                        <th style="width: 11%;">Price (₹)</th>
-                        <th style="width: 10%;">GST Rate</th>
-                        <th style="width: 11%;">GST (₹)</th>
+                        <th style="width: 10%;">Price (₹)</th>
+                        <th style="width: 8%;">GST Rate</th>
+                        <th style="width: 10%;">GST (₹)</th>
                         <th style="width: 12%;">Amount(₹)</th>
                         <th class="no-print" style="width: 4%;">Act</th>
                     </tr>
@@ -429,9 +434,10 @@ State: 01-Jammu & Kashmir</textarea>
 
     <!-- 6. INVENTORY PANEL -->
     <div id="inventoryPanel" class="panel">
-        <h3>Stock Inventory</h3>
+        <h3>Stock & Barcode Management</h3>
         <div class="box-section">
             <input type="text" id="prodName" class="input-field" placeholder="Product Name">
+            <input type="text" id="prodBarcode" class="input-field" placeholder="Barcode Number (e.g. 890102...) Leave blank to auto-generate">
             <input type="text" id="prodHsn" class="input-field" placeholder="HSN/SAC">
             <input type="number" id="prodPrice" class="input-field" placeholder="Price (₹)">
             <select id="prodGst" class="input-field">
@@ -442,12 +448,13 @@ State: 01-Jammu & Kashmir</textarea>
                 <option value="0">0% GST</option>
             </select>
             <input type="number" id="prodStock" class="input-field" placeholder="Stock Qty">
-            <button class="btn-success" onclick="saveProduct()">Save Product</button>
+            <button class="btn-success" onclick="saveProduct()">Save Product & Barcode</button>
         </div>
         <table class="items-table" style="margin-top: 15px;">
             <thead>
                 <tr>
                     <th>Product</th>
+                    <th>Barcode</th>
                     <th>HSN</th>
                     <th>Price</th>
                     <th>GST</th>
@@ -478,8 +485,8 @@ State: 01-Jammu & Kashmir</textarea>
         { name: "PRINCIPAL KV HUMHAMA", address: "STC BSF CAMPUS, HUMHAMA, Budgam, JAMMU & KASHMIR-190007, India", phone: "", gstin: "Unregistered", state: "01-Jammu & Kashmir" }
     ];
     let inventory = JSON.parse(localStorage.getItem('gs_inventory')) || [
-        { name: "Steel almirah big one", hsn: "9403", price: 9322.03, gst: 18, stock: 10 },
-        { name: "Almirah small", hsn: "9403", price: 5508.47, gst: 18, stock: 15 }
+        { name: "Steel almirah big one", barcode: "BAR001", hsn: "9403", price: 9322.03, gst: 18, stock: 10 },
+        { name: "Almirah small", barcode: "BAR002", hsn: "9403", price: 5508.47, gst: 18, stock: 15 }
     ];
     let invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
 
@@ -489,6 +496,7 @@ State: 01-Jammu & Kashmir</textarea>
     onFirmChange();
     renderCompanyTable();
     renderCustomerList();
+    renderInventoryTable();
     addItemRow();
     setNextInvoiceNumber();
 
@@ -585,6 +593,50 @@ State: 01-Jammu & Kashmir</textarea>
         });
     }
 
+    function handleGlobalBarcode(event) {
+        if(event.key === 'Enter') {
+            event.preventDefault();
+            let val = document.getElementById('globalBarcodeScan').value.trim();
+            if(!val) return;
+            
+            // Search product by barcode or name
+            let p = inventory.find(item => item.barcode.toLowerCase() === val.toLowerCase() || item.name.toLowerCase().includes(val.toLowerCase()));
+            if(p) {
+                addProductToInvoiceRow(p);
+                document.getElementById('globalBarcodeScan').value = '';
+            } else {
+                alert("Product nahi mila! Pehle Stock tab mein iska barcode save karein.");
+            }
+        }
+    }
+
+    function addProductToInvoiceRow(p) {
+        let tbody = document.getElementById('itemRows');
+        // Check if last row is empty, use it; else add new row
+        let rows = tbody.querySelectorAll('tr');
+        let targetRow = null;
+        for(let r of rows) {
+            let nameInput = r.querySelector('.prod-name-input');
+            if(nameInput && nameInput.value.trim() === "") {
+                targetRow = r;
+                break;
+            }
+        }
+        
+        if(!targetRow) {
+            addItemRow();
+            rows = tbody.querySelectorAll('tr');
+            targetRow = rows[rows.length - 1];
+        }
+
+        targetRow.querySelector('.prod-name-input').value = p.name;
+        targetRow.querySelector('.barcode-input').value = p.barcode || '';
+        targetRow.querySelector('.hsn').value = p.hsn;
+        targetRow.querySelector('.rate').value = p.price;
+        targetRow.querySelector('.gst-rate').value = p.gst !== undefined ? p.gst : 18;
+        calculateTotals();
+    }
+
     function addItemRow() {
         let tbody = document.getElementById('itemRows');
         let rowCount = tbody.rows.length + 1;
@@ -602,6 +654,7 @@ State: 01-Jammu & Kashmir</textarea>
                 <input type="text" class="input-field prod-name-input" list="${datalistId}" placeholder="Select item" onchange="onItemNameSelected(this)" style="margin-bottom:0;">
                 <datalist id="${datalistId}">${optionsHtml}</datalist>
             </td>
+            <td><input type="text" class="input-field barcode-input" placeholder="Barcode" onchange="onBarcodeEntered(this)" style="width: 75px; margin-bottom:0;"></td>
             <td><input type="text" class="input-field hsn" value="9403" oninput="calculateTotals()" style="width: 55px; margin-bottom:0;"></td>
             <td><input type="number" class="input-field qty" value="1" oninput="calculateTotals()" style="width: 40px; margin-bottom:0;"></td>
             <td>
@@ -634,6 +687,20 @@ State: 01-Jammu & Kashmir</textarea>
         let p = inventory.find(item => item.name === val);
         if(p) {
             let tr = inputElem.closest('tr');
+            tr.querySelector('.barcode-input').value = p.barcode || '';
+            tr.querySelector('.hsn').value = p.hsn;
+            tr.querySelector('.rate').value = p.price;
+            tr.querySelector('.gst-rate').value = p.gst !== undefined ? p.gst : 18;
+            calculateTotals();
+        }
+    }
+
+    function onBarcodeEntered(inputElem) {
+        let val = inputElem.value.trim();
+        let p = inventory.find(item => item.barcode.toLowerCase() === val.toLowerCase());
+        if(p) {
+            let tr = inputElem.closest('tr');
+            tr.querySelector('.prod-name-input').value = p.name;
             tr.querySelector('.hsn').value = p.hsn;
             tr.querySelector('.rate').value = p.price;
             tr.querySelector('.gst-rate').value = p.gst !== undefined ? p.gst : 18;
@@ -808,7 +875,7 @@ State: 01-Jammu & Kashmir</textarea>
     }
 
     function processInvoiceSave() {
-        let firmIdx = document.getElementById('activeFirmSelect').value;
+        let firmIdx = document.getElementById('activeFirmSelect'].value;
         let firm = companies[firmIdx] || companies[0];
         let invNo = document.getElementById('invNumber').value;
         let invDate = document.getElementById('invDate').value;
@@ -847,7 +914,7 @@ State: 01-Jammu & Kashmir</textarea>
                     <td>${inv.date}</td>
                     <td>${inv.customer}</td>
                     <td style="color: ${inv.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">${inv.status}</td>
-                    <td>₹${inv.total.toFixed(2)}</td>
+                    -><td>₹${inv.total.toFixed(2)}</td>
                     <td><button onclick="invoices.splice(${idx},1); localStorage.setItem('gs_invoices', JSON.stringify(invoices)); renderInvoiceHistory();" class="btn-danger" style="padding:2px 5px;">Delete</button></td>
                 </tr>`;
         });
@@ -898,23 +965,28 @@ State: 01-Jammu & Kashmir</textarea>
 
     function saveProduct() {
         let name = document.getElementById('prodName').value.trim();
+        let barcode = document.getElementById('prodBarcode').value.trim();
         let hsn = document.getElementById('prodHsn').value.trim();
         let price = parseFloat(document.getElementById('prodPrice').value) || 0;
         let gst = parseFloat(document.getElementById('prodGst').value) || 18;
         let stock = parseInt(document.getElementById('prodStock').value) || 0;
-        if(!name) return;
-        inventory.push({name, hsn, price, gst, stock});
-        localStorage.setItem('gs_invoices', JSON.stringify(inventory)); // wait, inventory storage
+        
+        if(!name) { alert("Product name zaroori hai!"); return; }
+        if(!barcode) {
+            barcode = "BAR" + Math.floor(1000 + Math.random() * 9000);
+        }
+
+        inventory.push({name, barcode, hsn, price, gst, stock});
         localStorage.setItem('gs_inventory', JSON.stringify(inventory));
         renderInventoryTable();
-        alert("Product saved!");
+        alert("Product and Barcode saved successfully!");
     }
 
     function renderInventoryTable() {
         let tbody = document.getElementById('inventoryTableBody');
         tbody.innerHTML = '';
         inventory.forEach((p, idx) => {
-            tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button onclick="inventory.splice(${idx},1); localStorage.setItem('gs_inventory', JSON.stringify(inventory)); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${p.name}</td><td><b>${p.barcode || 'N/A'}</b></td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button onclick="inventory.splice(${idx},1); localStorage.setItem('gs_inventory', JSON.stringify(inventory)); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td></tr>`;
         });
     }
 
