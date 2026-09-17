@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tax Invoice - Custom Multi-Firm Generator with Barcode</title>
+    <title>Tax Invoice - Custom Multi-Firm Generator with Barcode & Reports</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -158,6 +158,17 @@
             align-items: center;
             font-size: 13px;
         }
+        .stat-card {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            flex: 1;
+            min-width: 180px;
+        }
+        .stat-card h4 { margin: 0 0 5px 0; color: #555; font-size: 13px; }
+        .stat-card div { font-size: 18px; font-weight: bold; color: #2c3e50; }
         @media print {
             body { background-color: #fff; padding: 0; }
             .container, .invoice-box { box-shadow: none; border: none; padding: 0; max-width: 100%; }
@@ -174,6 +185,7 @@
         <button class="tab-btn active" onclick="switchTab('invoice', event)">Create Invoice</button>
         <button class="tab-btn" onclick="switchTab('history', event)">Invoice History</button>
         <button class="tab-btn" onclick="switchTab('ledger', event)">Pending Payments (Udhaar)</button>
+        <button class="tab-btn" onclick="switchTab('reports', event)">📊 Reports & Day Book</button>
         <button class="tab-btn" onclick="switchTab('business', event)">Manage Firms</button>
         <button class="tab-btn" onclick="switchTab('customers', event)">Customers</button>
         <button class="tab-btn" onclick="switchTab('inventory', event)">Stock & Barcode</button>
@@ -382,7 +394,40 @@ State: 01-Jammu & Kashmir</textarea>
         </table>
     </div>
 
-    <!-- 4. BUSINESS PROFILES PANEL -->
+    <!-- 4. REPORTS PANEL -->
+    <div id="reportsPanel" class="panel">
+        <h3>📊 Business Reports & Day Book</h3>
+        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+            <div class="stat-card">
+                <h4>Total Sales Revenue</h4>
+                <div id="repTotalSales">₹0.00</div>
+            </div>
+            <div class="stat-card">
+                <h4>Total Amount Received</h4>
+                <div id="repTotalReceived" style="color: green;">₹0.00</div>
+            </div>
+            <div class="stat-card">
+                <h4>Total Pending (Udhaar)</h4>
+                <div id="repTotalPending" style="color: red;">₹0.00</div>
+            </div>
+        </div>
+
+        <h4>Day Book (Recent Transactions Summary)</h4>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Invoice No.</th>
+                    <th>Customer Name</th>
+                    <th>Total Bill (₹)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="dayBookTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- 5. BUSINESS PROFILES PANEL -->
     <div id="businessPanel" class="panel">
         <h3>Manage Firms</h3>
         <div class="box-section">
@@ -419,7 +464,7 @@ State: 01-Jammu & Kashmir</textarea>
         </table>
     </div>
 
-    <!-- 5. CUSTOMERS PANEL -->
+    <!-- 6. CUSTOMERS PANEL -->
     <div id="customersPanel" class="panel">
         <h3>Customer Management</h3>
         <div class="box-section">
@@ -432,7 +477,7 @@ State: 01-Jammu & Kashmir</textarea>
         <ul id="customerList" style="margin-top: 15px; font-size: 12px;"></ul>
     </div>
 
-    <!-- 6. INVENTORY PANEL -->
+    <!-- 7. INVENTORY PANEL -->
     <div id="inventoryPanel" class="panel">
         <h3>Stock & Barcode Management</h3>
         <div class="box-section">
@@ -521,6 +566,7 @@ State: 01-Jammu & Kashmir</textarea>
         if(tab === 'invoice') { document.getElementById('invoicePanel').classList.add('active'); event.target.classList.add('active'); }
         else if(tab === 'history') { document.getElementById('historyPanel').classList.add('active'); event.target.classList.add('active'); renderInvoiceHistory(); }
         else if(tab === 'ledger') { document.getElementById('ledgerPanel').classList.add('active'); event.target.classList.add('active'); renderLedger(); }
+        else if(tab === 'reports') { document.getElementById('reportsPanel').classList.add('active'); event.target.classList.add('active'); renderReports(); }
         else if(tab === 'business') { document.getElementById('businessPanel').classList.add('active'); event.target.classList.add('active'); renderCompanyTable(); }
         else if(tab === 'customers') { document.getElementById('customersPanel').classList.add('active'); event.target.classList.add('active'); renderCustomerList(); }
         else if(tab === 'inventory') { document.getElementById('inventoryPanel').classList.add('active'); event.target.classList.add('active'); renderInventoryTable(); }
@@ -599,7 +645,6 @@ State: 01-Jammu & Kashmir</textarea>
             let val = document.getElementById('globalBarcodeScan').value.trim();
             if(!val) return;
             
-            // Search product by barcode or name
             let p = inventory.find(item => item.barcode.toLowerCase() === val.toLowerCase() || item.name.toLowerCase().includes(val.toLowerCase()));
             if(p) {
                 addProductToInvoiceRow(p);
@@ -612,7 +657,6 @@ State: 01-Jammu & Kashmir</textarea>
 
     function addProductToInvoiceRow(p) {
         let tbody = document.getElementById('itemRows');
-        // Check if last row is empty, use it; else add new row
         let rows = tbody.querySelectorAll('tr');
         let targetRow = null;
         for(let r of rows) {
@@ -875,7 +919,7 @@ State: 01-Jammu & Kashmir</textarea>
     }
 
     function processInvoiceSave() {
-        let firmIdx = document.getElementById('activeFirmSelect'].value;
+        let firmIdx = document.getElementById('activeFirmSelect').value;
         let firm = companies[firmIdx] || companies[0];
         let invNo = document.getElementById('invNumber').value;
         let invDate = document.getElementById('invDate').value;
@@ -885,6 +929,7 @@ State: 01-Jammu & Kashmir</textarea>
 
         let grandTotalText = document.getElementById('grandTotal').innerText.replace('₹','');
         let grandTotal = parseFloat(grandTotalText) || 0;
+        let received = parseFloat(document.getElementById('amtReceived').value) || 0;
         let balance = parseFloat(document.getElementById('balanceAmount').innerText.replace('₹','')) || 0;
         let status = balance > 0 ? 'Pending' : 'Paid';
 
@@ -895,6 +940,7 @@ State: 01-Jammu & Kashmir</textarea>
             customer: custName,
             status: status,
             total: grandTotal,
+            received: received,
             balance: balance
         };
 
@@ -914,7 +960,7 @@ State: 01-Jammu & Kashmir</textarea>
                     <td>${inv.date}</td>
                     <td>${inv.customer}</td>
                     <td style="color: ${inv.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">${inv.status}</td>
-                    -><td>₹${inv.total.toFixed(2)}</td>
+                    <td>₹${inv.total.toFixed(2)}</td>
                     <td><button onclick="invoices.splice(${idx},1); localStorage.setItem('gs_invoices', JSON.stringify(invoices)); renderInvoiceHistory();" class="btn-danger" style="padding:2px 5px;">Delete</button></td>
                 </tr>`;
         });
@@ -943,10 +989,42 @@ State: 01-Jammu & Kashmir</textarea>
         let inv = invoices.find(i => i.id === id);
         if(inv) {
             inv.balance = 0;
+            inv.received = inv.total;
             inv.status = 'Paid';
             localStorage.setItem('gs_invoices', JSON.stringify(invoices));
             renderLedger();
         }
+    }
+
+    function renderReports() {
+        let totalSales = 0;
+        let totalReceived = 0;
+        let totalPending = 0;
+        let tbody = document.getElementById('dayBookTableBody');
+        tbody.innerHTML = '';
+
+        if(invoices.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:10px;">No transactions recorded yet.</td></tr>`;
+        }
+
+        invoices.slice().reverse().forEach(inv => {
+            totalSales += inv.total;
+            totalReceived += (inv.received !== undefined ? inv.received : (inv.total - (inv.balance || 0)));
+            totalPending += (inv.balance || 0);
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${inv.date}</td>
+                    <td>${inv.id}</td>
+                    <td><b>${inv.customer}</b></td>
+                    <td>₹${inv.total.toFixed(2)}</td>
+                    <td style="color: ${inv.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">${inv.status}</td>
+                </tr>`;
+        });
+
+        document.getElementById('repTotalSales').innerText = `₹${totalSales.toFixed(2)}`;
+        document.getElementById('repTotalReceived').innerText = `₹${totalReceived.toFixed(2)}`;
+        document.getElementById('repTotalPending').innerText = `₹${totalPending.toFixed(2)}`;
     }
 
     function saveCustomer() {
@@ -965,7 +1043,7 @@ State: 01-Jammu & Kashmir</textarea>
 
     function saveProduct() {
         let name = document.getElementById('prodName').value.trim();
-        let barcode = document.getElementById('prodBarcode').value.trim();
+        let barcode = document.getElementById('prodBarcode'].value.trim();
         let hsn = document.getElementById('prodHsn').value.trim();
         let price = parseFloat(document.getElementById('prodPrice').value) || 0;
         let gst = parseFloat(document.getElementById('prodGst').value) || 18;
