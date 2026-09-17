@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tax Invoice - Custom Multi-Firm Generator with Barcode & Reports</title>
+    <title>Tax Invoice - Cloud POS with Camera Barcode Scanner</title>
+    <!-- QuaggaJS for Camera Barcode Scanning -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <!-- Firebase App & Firestore SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -148,15 +154,18 @@
         .btn-whatsapp { background-color: #25d366; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         .btn-email { background-color: #ea4335; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         .btn-danger { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;}
+        .btn-warning { background-color: #ffc107; color: #000; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        
         .settings-bar {
             background: #e9ecef;
             padding: 10px;
             margin-bottom: 15px;
             border-radius: 4px;
             display: flex;
-            gap: 20px;
+            gap: 15px;
             align-items: center;
             font-size: 13px;
+            flex-wrap: wrap;
         }
         .stat-card {
             background: #fff;
@@ -171,23 +180,29 @@
         .stat-card div { font-size: 18px; font-weight: bold; color: #2c3e50; }
         .low-stock { background-color: #ffd2d2 !important; color: #900; font-weight: bold; }
         
-        /* Thermal Receipt Hidden Container */
-        #thermalReceiptModal {
+        /* Camera Scanner Modal */
+        #scannerModal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.8);
             justify-content: center; align-items: center;
-            z-index: 1000;
+            z-index: 2000;
+            flex-direction: column;
         }
-        .thermal-box {
-            width: 300px;
-            background: #fff;
-            padding: 15px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        #interactive.viewport {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            position: relative;
         }
+        #interactive.viewport canvas, #interactive.viewport video {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+        }
+
         @media print {
             body { background-color: #fff; padding: 0; }
             .container, .invoice-box { box-shadow: none; border: none; padding: 0; max-width: 100%; }
@@ -210,15 +225,29 @@
         <button class="tab-btn" onclick="switchTab('inventory', event)">Stock & Barcode</button>
     </div>
 
-    <!-- SETTINGS BAR -->
+    <!-- SETTINGS & CLOUD BAR -->
     <div class="settings-bar no-print">
         <strong>Price Mode:</strong>
-        <label><input type="radio" name="priceMode" value="exclusive" checked onchange="calculateTotals()"> Without GST (Exclusive)</label>
-        <label><input type="radio" name="priceMode" value="inclusive" onchange="calculateTotals()"> With GST (Inclusive)</label>
+        <label><input type="radio" name="priceMode" value="exclusive" checked onchange="calculateTotals()"> Without GST</label>
+        <label><input type="radio" name="priceMode" value="inclusive" onchange="calculateTotals()"> With GST</label>
         
-        <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
-            <input type="text" id="globalBarcodeScan" class="input-field" placeholder="🔍 Scan Barcode / Type Item Name here..." onkeypress="handleGlobalBarcode(event)" style="margin-bottom: 0; width: 280px; font-weight: bold;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="globalBarcodeScan" class="input-field" placeholder="🔍 Scan Barcode / Search..." onkeypress="handleGlobalBarcode(event)" style="margin-bottom: 0; width: 200px; font-weight: bold;">
+            <button class="btn-warning" onclick="startCameraScanner()" style="padding: 5px 10px; font-size: 11px;">📷 Scan Camera</button>
         </div>
+        
+        <div style="margin-left: auto; display: flex; gap: 5px; align-items: center;">
+            <span id="syncStatus" style="font-size: 11px; color: green; font-weight: bold;">🟢 Local Mode</span>
+            <button class="btn-info" onclick="toggleCloudConfig()" style="padding: 4px 8px; font-size: 11px;">☁️ Firebase Sync</button>
+        </div>
+    </div>
+
+    <!-- FIREBOX CONFIG PANEL (HIDDEN BY DEFAULT) -->
+    <div id="cloudConfigBox" class="box-section no-print" style="display: none; background: #e8f4fd; margin-bottom: 15px;">
+        <h4 style="margin-top:0;">Firebase Cloud Database Configuration</h4>
+        <p style="font-size: 11px; color: #555;">Apna Firebase project config yahan dalein taaki saara data cloud par sync ho sake:</p>
+        <textarea id="firebaseConfigInput" class="input-field" rows="4" placeholder='Paste firebaseConfig JSON here (e.g. { apiKey: "...", authDomain: "...", ... })'></textarea>
+        <button class="btn-success" onclick="saveFirebaseConfig()" style="padding: 5px 10px;">Connect & Save Cloud</button>
     </div>
 
     <!-- 1. INVOICE PANEL -->
@@ -370,7 +399,7 @@ State: 01-Jammu & Kashmir</textarea>
             <!-- Action Buttons -->
             <div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;" class="no-print">
                 <button class="btn-success" onclick="saveAndPrintInvoice()" style="flex: 1;">Save & Print A4</button>
-                <button class="btn-info" onclick="openThermalReceipt()" style="flex: 1;">🖨️ Print POS (2/3 inch)</button>
+                <button class="btn-info" onclick="openThermalReceipt()" style="flex: 1;">🖨️ Print POS</button>
                 <button class="btn-info" onclick="downloadOrSharePDF()" style="flex: 1;">📥 PDF Download</button>
                 <button class="btn-whatsapp" onclick="shareOnWhatsApp()" style="flex: 1;">📱 WhatsApp</button>
                 <button class="btn-email" onclick="shareViaEmail()" style="flex: 0.8;">✉️ Email</button>
@@ -433,7 +462,6 @@ State: 01-Jammu & Kashmir</textarea>
         </div>
 
         <h4 style="border-top: 1px solid #ccc; padding-top: 10px;">GSTR-1 HSN-Wise Summary Report</h4>
-        <p style="font-size: 11px; color: #555;">Yeh report aapki saari saved invoices se HSN code ke hisaab se total taxable aur tax amount jod kar deti hai.</p>
         <table class="items-table">
             <thead>
                 <tr>
@@ -468,11 +496,11 @@ State: 01-Jammu & Kashmir</textarea>
         <div class="box-section">
             <h4 style="margin-top:0;">Add / Register New Firm</h4>
             <label><strong>Firm Name:</strong></label>
-            <input type="text" id="busName" class="input-field" placeholder="e.g. Golden Star Furniture and Interior">
+            <input type="text" id="busName" class="input-field" placeholder="e.g. Golden Star Furniture">
             <label><strong>Invoice Prefix:</strong></label>
             <input type="text" id="busPrefix" class="input-field" placeholder="e.g. GSF">
             <label><strong>Full Address:</strong></label>
-            <textarea id="busAddress" class="input-field" placeholder="Shop address, Area, City, State"></textarea>
+            <textarea id="busAddress" class="input-field" placeholder="Shop address, City, State"></textarea>
             <label><strong>Phone Number:</strong></label>
             <input type="text" id="busPhone" class="input-field" placeholder="Mobile number">
             <label><strong>GSTIN:</strong></label>
@@ -526,12 +554,12 @@ State: 01-Jammu & Kashmir</textarea>
     <!-- 7. INVENTORY PANEL -->
     <div id="inventoryPanel" class="panel">
         <h3>Stock & Barcode Management</h3>
-        <div style="background: #fff3cd; border: 1px solid #ffeeba; padding: 8px; margin-bottom: 10px; font-size: 11px; border-radius: 4px;">
-            ⚠️ <b>Low Stock Alert:</b> Items jinka stock 5 ya usse kam hai, woh red highlight mein dikhenge.
-        </div>
         <div class="box-section">
             <input type="text" id="prodName" class="input-field" placeholder="Product Name">
-            <input type="text" id="prodBarcode" class="input-field" placeholder="Barcode Number (e.g. 890102...) Leave blank to auto-generate">
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="prodBarcode" class="input-field" placeholder="Barcode Number" style="margin-bottom:5px;">
+                <button class="btn-warning" onclick="startCameraScannerForInventory()" style="height:28px; font-size:11px;">📷 Scan</button>
+            </div>
             <input type="text" id="prodHsn" class="input-field" placeholder="HSN/SAC">
             <input type="number" id="prodPrice" class="input-field" placeholder="Price (₹)">
             <select id="prodGst" class="input-field">
@@ -561,10 +589,19 @@ State: 01-Jammu & Kashmir</textarea>
     </div>
 </div>
 
+<!-- CAMERA SCANNER MODAL VIEW -->
+<div id="scannerModal">
+    <div style="background:white; padding:15px; border-radius:8px; text-align:center; width:340px;">
+        <h4 style="margin-top:0;">Scan Barcode via Camera</h4>
+        <div id="interactive" class="viewport"></div>
+        <button class="btn-danger" onclick="stopCameraScanner()" style="margin-top:15px; width:100%;">Close Camera</button>
+    </div>
+</div>
+
 <!-- THERMAL RECEIPT MODAL PREVIEW -->
-<div id="thermalReceiptModal" class="no-print">
-    <div class="thermal-box">
-        <div id="thermalContent" style="white-space: pre-line; font-family: monospace;"></div>
+<div id="thermalReceiptModal" class="no-print" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+    <div style="width:300px; background:#fff; padding:15px; font-family:'Courier New',Courier,monospace; font-size:12px;">
+        <div id="thermalContent" style="white-space: pre-line;"></div>
         <div style="margin-top: 15px; display: flex; gap: 5px;">
             <button class="btn-success" onclick="window.print()" style="flex:1; font-size:11px;">Print Slip</button>
             <button class="btn-danger" onclick="document.getElementById('thermalReceiptModal').style.display='none'" style="flex:1; font-size:11px;">Close</button>
@@ -573,25 +610,29 @@ State: 01-Jammu & Kashmir</textarea>
 </div>
 
 <script>
+    // Data structures (Local + Firebase Sync logic)
+    let db = null;
+    let useCloud = false;
+
     let companies = JSON.parse(localStorage.getItem('gs_companies')) || [
         {
             name: "Golden Square & Co .",
             prefix: "GS",
-            address: "3RD FLOOR ROOM 1 FURNITURE BUILDING NEAR VETERINARY HOSPITAL EXCHANGE ROAD LAL CHOWK ESTATE MAISUMA",
+            address: "3RD FLOOR ROOM 1 FURNITURE BUILDING NEAR VETERINARY HOSPITAL EXCHANGE ROAD LAL CHOWK",
             phone: "7006688390",
             gstin: "01OFPS7711Q1ZB",
-            bankName: "Jammu And Kashmir Bank Limited, Amira Kadal Srinagar",
+            bankName: "Jammu And Kashmir Bank Limited",
             accNo: "0002010100008509",
             ifsc: "JAKAOSQUARE"
         }
     ];
 
     let customers = JSON.parse(localStorage.getItem('gs_customers')) || [
-        { name: "PRINCIPAL KV HUMHAMA", address: "STC BSF CAMPUS, HUMHAMA, Budgam, JAMMU & KASHMIR-190007, India", phone: "", gstin: "Unregistered", state: "01-Jammu & Kashmir" }
+        { name: "PRINCIPAL KV HUMHAMA", address: "STC BSF CAMPUS, HUMHAMA, Budgam, J&K-190007", phone: "", gstin: "Unregistered", state: "01-Jammu & Kashmir" }
     ];
     let inventory = JSON.parse(localStorage.getItem('gs_inventory')) || [
-        { name: "Steel almirah big one", barcode: "BAR001", hsn: "9403", price: 9322.03, gst: 18, stock: 3 },
-        { name: "Almirah small", barcode: "BAR002", hsn: "9403", price: 5508.47, gst: 18, stock: 15 }
+        { name: "Steel almirah big one", barcode: "890101", hsn: "9403", price: 9322.03, gst: 18, stock: 3 },
+        { name: "Almirah small", barcode: "890102", hsn: "9403", price: 5508.47, gst: 18, stock: 15 }
     ];
     let invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
 
@@ -605,7 +646,137 @@ State: 01-Jammu & Kashmir</textarea>
         renderInventoryTable();
         addItemRow();
         setNextInvoiceNumber();
+
+        // Check if firebase config saved previously
+        let savedCfg = localStorage.getItem('gs_fb_config');
+        if(savedCfg) {
+            try {
+                let cfgObj = JSON.parse(savedCfg);
+                document.getElementById('firebaseConfigInput').value = savedCfg;
+                initFirebase(cfgObj);
+            } catch(e) {}
+        }
     };
+
+    function toggleCloudConfig() {
+        let box = document.getElementById('cloudConfigBox');
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function saveFirebaseConfig() {
+        let val = document.getElementById('firebaseConfigInput').value.trim();
+        try {
+            let cfgObj = JSON.parse(val);
+            localStorage.setItem('gs_fb_config', val);
+            initFirebase(cfgObj);
+            alert("Firebase successfully connected!");
+            toggleCloudConfig();
+        } catch(e) {
+            alert("Invalid JSON format! Kripya sahi Firebase config JSON dalein.");
+        }
+    }
+
+    function initFirebase(config) {
+        try {
+            if(!firebase.apps.length) {
+                firebase.initializeApp(config);
+            }
+            db = firebase.firestore();
+            useCloud = true;
+            document.getElementById('syncStatus').innerText = "☁️ Cloud Synced";
+            document.getElementById('syncStatus').style.color = "#007bff";
+            fetchCloudData();
+        } catch(e) {
+            console.error(e);
+            useCloud = false;
+        }
+    }
+
+    async function fetchCloudData() {
+        if(!useCloud || !db) return;
+        try {
+            let snap = await db.collection('pos_data').doc('store').get();
+            if(snap.exists) {
+                let data = snap.data();
+                if(data.companies) companies = data.companies;
+                if(data.customers) customers = data.customers;
+                if(data.inventory) inventory = data.inventory;
+                if(data.invoices) invoices = data.invoices;
+                
+                populateFirmDropdowns();
+                populateCustomerDropdown();
+                renderInventoryTable();
+                onFirmChange();
+            }
+        } catch(e) { console.error("Cloud fetch error", e); }
+    }
+
+    function syncToCloud() {
+        if(!useCloud || !db) {
+            localStorage.setItem('gs_companies', JSON.stringify(companies));
+            localStorage.setItem('gs_customers', JSON.stringify(customers));
+            localStorage.setItem('gs_inventory', JSON.stringify(inventory));
+            localStorage.setItem('gs_invoices', JSON.stringify(invoices));
+            return;
+        }
+        db.collection('pos_data').doc('store').set({
+            companies, customers, inventory, invoices
+        }).catch(e => console.error("Cloud sync failed", e));
+    }
+
+    // Camera Barcode Scanner Integration using QuaggaJS
+    let activeScannerTarget = 'global'; // 'global' or 'inventory'
+    function startCameraScanner(target = 'global') {
+        activeScannerTarget = target;
+        document.getElementById('scannerModal').style.display = 'flex';
+        
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector('#interactive'),
+                constraints: {
+                    facingMode: "environment" // Use back camera on phones
+                },
+            },
+            decoder: {
+                readers: ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader", "upc_e_reader"]
+            }
+        }, function(err) {
+            if (err) {
+                console.error(err);
+                alert("Camera start nahi ho saka! Kripya camera permission check karein.");
+                stopCameraScanner();
+                return;
+            }
+            Quagga.start();
+        });
+
+        Quagga.onDetected(onBarcodeScannedFromCamera);
+    }
+
+    function startCameraScannerForInventory() {
+        startCameraScanner('inventory');
+    }
+
+    function stopCameraScanner() {
+        try {
+            Quagga.stop();
+        } catch(e) {}
+        document.getElementById('scannerModal').style.display = 'none';
+    }
+
+    function onBarcodeScannedFromCamera(result) {
+        let code = result.codeResult.code;
+        stopCameraScanner();
+
+        if(activeScannerTarget === 'global') {
+            document.getElementById('globalBarcodeScan').value = code;
+            handleGlobalBarcode({ key: 'Enter', preventDefault: () => {} });
+        } else if(activeScannerTarget === 'inventory') {
+            document.getElementById('prodBarcode').value = code;
+        }
+    }
 
     function setNextInvoiceNumber() {
         if(invoices.length > 0) {
@@ -633,9 +804,7 @@ State: 01-Jammu & Kashmir</textarea>
         else if(tab === 'customers') { document.getElementById('customersPanel').classList.add('active'); renderCustomerTable(); }
         else if(tab === 'inventory') { document.getElementById('inventoryPanel').classList.add('active'); renderInventoryTable(); }
 
-        if(event && event.target) {
-            event.target.classList.add('active');
-        }
+        if(event && event.target) { event.target.classList.add('active'); }
     }
 
     function populateFirmDropdowns() {
@@ -660,8 +829,7 @@ State: 01-Jammu & Kashmir</textarea>
         let idx = document.getElementById('invoiceCustDropdown').value;
         if(idx === "") return;
         let c = customers[idx];
-        let formattedDetails = `${c.name}\n${c.address}\nGSTIN: ${c.gstin || 'Unregistered'}\nState: ${c.state || '01-Jammu & Kashmir'}`;
-        document.getElementById('manualCustDetails').value = formattedDetails;
+        document.getElementById('manualCustDetails').value = `${c.name}\n${c.address}\nGSTIN: ${c.gstin || 'Unregistered'}\nState: ${c.state || '01-Jammu & Kashmir'}`;
     }
 
     function onFirmChange() {
@@ -671,8 +839,8 @@ State: 01-Jammu & Kashmir</textarea>
         
         document.getElementById('lblCompanyName').innerText = c.name;
         document.getElementById('lblSignCompanyName').innerText = `For ${c.name} .:`;
-        document.getElementById('lblCompanyDetails').innerHTML = `${c.address}<br><strong>Phone:</strong> ${c.phone} &nbsp;&nbsp;&nbsp;&nbsp; <strong>GSTIN:</strong> ${c.gstin}<br><strong>State:</strong> 01-Jammu & Kashmir`;
-        document.getElementById('lblBankDetails').innerHTML = `Name: ${c.bankName}<br>Account No.: ${c.accNo}<br>IFSC code: ${c.ifsc}<br>Account Holder's Name: ${c.name}`;
+        document.getElementById('lblCompanyDetails').innerHTML = `${c.address}<br><strong>Phone:</strong> ${c.phone} &nbsp;&nbsp;&nbsp;&nbsp; <strong>GSTIN:</strong> ${c.gstin}`;
+        document.getElementById('lblBankDetails').innerHTML = `Name: ${c.bankName}<br>Account No.: ${c.accNo}<br>IFSC code: ${c.ifsc}`;
     }
 
     function saveBusinessProfile() {
@@ -685,13 +853,13 @@ State: 01-Jammu & Kashmir</textarea>
         let accNo = document.getElementById('bankAccNo').value.trim();
         let ifsc = document.getElementById('bankIfsc').value.trim();
         
-        if(!name) { alert("Firm name dalna zaroori hai!"); return; }
+        if(!name) { alert("Firm name required!"); return; }
 
         companies.push({ name, prefix, address, phone, gstin, bankName, accNo, ifsc });
-        localStorage.setItem('gs_companies', JSON.stringify(companies));
+        syncToCloud();
         populateFirmDropdowns();
         renderCompanyTable();
-        alert("Firm successfully save ho gayi hai!");
+        alert("Firm saved successfully!");
     }
 
     function renderCompanyTable() {
@@ -703,7 +871,7 @@ State: 01-Jammu & Kashmir</textarea>
                 <tr>
                     <td><b>${c.name}</b><br><small>${c.address}</small></td>
                     <td>${c.gstin || 'N/A'}</td>
-                    <td><button onclick="companies.splice(${idx},1); localStorage.setItem('gs_companies', JSON.stringify(companies)); populateFirmDropdowns(); renderCompanyTable();" class="btn-danger" style="padding:2px 5px;">Delete</button></td>
+                    <td><button onclick="companies.splice(${idx},1); syncToCloud(); populateFirmDropdowns(); renderCompanyTable();" class="btn-danger" style="padding:2px 5px;">Delete</button></td>
                 </tr>`;
         });
     }
@@ -719,7 +887,7 @@ State: 01-Jammu & Kashmir</textarea>
                 addProductToInvoiceRow(p);
                 document.getElementById('globalBarcodeScan').value = '';
             } else {
-                alert("Product nahi mila! Pehle Stock tab mein iska barcode save karein.");
+                alert("Product not found in stock!");
             }
         }
     }
@@ -775,7 +943,6 @@ State: 01-Jammu & Kashmir</textarea>
                     <option value="Nos">Nos</option>
                     <option value="Pcs">Pcs</option>
                     <option value="Set">Set</option>
-                    <option value="-">-</option>
                 </select>
             </td>
             <td><input type="number" class="input-field rate" value="0" oninput="calculateTotals()" style="width: 65px; margin-bottom:0;"></td>
@@ -900,16 +1067,11 @@ State: 01-Jammu & Kashmir</textarea>
 
         document.getElementById('subTotal').innerText = `₹${subTotal.toFixed(2)}`;
         document.getElementById('grandTotal').innerText = `₹${subTotal.toFixed(2)}`;
-        document.getElementById('amountInWords').innerText = convertNumberToWords(Math.round(subTotal));
+        document.getElementById('amountInWords').innerText = Math.round(subTotal).toLocaleString('en-IN') + " Rupees Only";
 
         let received = parseFloat(document.getElementById('amtReceived').value) || 0;
         let balance = subTotal - received;
         document.getElementById('balanceAmount').innerText = `₹${balance.toFixed(2)}`;
-    }
-
-    function convertNumberToWords(num) {
-        if(num === 0) return "Zero Rupees Only";
-        return num.toLocaleString('en-IN') + " Rupees Only";
     }
 
     function saveCustomer() {
@@ -917,10 +1079,10 @@ State: 01-Jammu & Kashmir</textarea>
         let address = document.getElementById('newCustAddress').value.trim();
         let phone = document.getElementById('newCustPhone').value.trim();
         let gstin = document.getElementById('newCustGstin').value.trim();
-        if(!name) { alert("Customer name zaroori hai!"); return; }
+        if(!name) { alert("Customer name required!"); return; }
         
         customers.push({name, address, phone, gstin, state: "01-Jammu & Kashmir"});
-        localStorage.setItem('gs_customers', JSON.stringify(customers));
+        syncToCloud();
         renderCustomerTable();
         populateCustomerDropdown();
         alert("Customer saved successfully!");
@@ -936,33 +1098,30 @@ State: 01-Jammu & Kashmir</textarea>
                     <td><b>${c.name}</b></td>
                     <td>${c.phone || 'N/A'}</td>
                     <td>${c.gstin || 'Unregistered'}<br><small>${c.address}</small></td>
-                    <td><button class="btn-info" onclick="viewCustomerLedger('${c.name}')" style="padding:2px 6px; font-size:11px;">View Ledger Statement</button></td>
-                    <td><button onclick="customers.splice(${idx},1); localStorage.setItem('gs_customers', JSON.stringify(customers)); renderCustomerTable(); populateCustomerDropdown();" class="btn-danger" style="padding:2px 5px;">X</button></td>
+                    <td><button class="btn-info" onclick="viewCustomerLedger('${c.name}')" style="padding:2px 6px; font-size:11px;">View Ledger</button></td>
+                    <td><button onclick="customers.splice(${idx},1); syncToCloud(); renderCustomerTable(); populateCustomerDropdown();" class="btn-danger" style="padding:2px 5px;">X</button></td>
                 </tr>`;
         });
     }
 
     function viewCustomerLedger(custName) {
         let custInvoices = invoices.filter(i => i.customer.toLowerCase().includes(custName.toLowerCase()));
-        let totalBilled = 0;
-        let totalBalance = 0;
-        let summary = `📜 LEDGER STATEMENT FOR: ${custName}\n----------------------------------\n`;
+        let totalBilled = 0, totalBalance = 0;
+        let summary = `📜 LEDGER FOR: ${custName}\n----------------------------------\n`;
         
         if(custInvoices.length === 0) {
-            alert(`Customer "${custName}" ki koi purani invoice history nahi mili.`);
+            alert(`No history found for "${custName}".`);
             return;
         }
 
         custInvoices.forEach(inv => {
             totalBilled += inv.total;
             totalBalance += inv.balance;
-            summary += `Inv #${inv.id} (${inv.date}) - Bill: ₹${inv.total.toFixed(2)} | Due: ₹${inv.balance.toFixed(2)} [${inv.status}]\n`;
+            summary += `Inv #${inv.id} (${inv.date}) - Bill: ₹${inv.total.toFixed(2)} | Due: ₹${inv.balance.toFixed(2)}\n`;
         });
 
-        summary += `----------------------------------\nTotal Billed: ₹${totalBilled.toFixed(2)}\nTotal Pending Due: ₹${totalBalance.toFixed(2)}`;
-        
-        // Share via WhatsApp option prompt
-        if(confirm(summary + "\n\nKya aap yeh statement WhatsApp par bhejna chahte hain?")) {
+        summary += `----------------------------------\nTotal Billed: ₹${totalBilled.toFixed(2)}\nTotal Pending: ₹${totalBalance.toFixed(2)}`;
+        if(confirm(summary + "\n\nSend via WhatsApp?")) {
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(summary)}`, '_blank');
         }
     }
@@ -1014,86 +1173,33 @@ State: 01-Jammu & Kashmir</textarea>
 
     function downloadOrSharePDF() {
         processInvoiceSave();
-        alert("Tip: Print popup mein 'Save as PDF' select karke PDF download karein.");
         window.print();
-    }
-
-    function getInvoiceTextSummary() {
-        let firmIdx = document.getElementById('activeFirmSelect').value;
-        let firm = companies[firmIdx] || companies[0];
-        let invNo = document.getElementById('invNumber').value;
-        let invDate = document.getElementById('invDate').value;
-        let custText = document.getElementById('manualCustDetails').value.replace(/\n/g, ' - ');
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        let balance = document.getElementById('balanceAmount').innerText;
-
-        let itemsText = "";
-        let rows = document.querySelectorAll('#itemRows tr');
-        let count = 1;
-        rows.forEach(row => {
-            let nameInput = row.querySelector('.prod-name-input');
-            if(nameInput && nameInput.value.trim() !== "") {
-                let itemName = nameInput.value;
-                let qty = row.querySelector('.qty').value;
-                let unit = row.querySelector('.unit').value;
-                let tot = row.querySelector('.row-total').innerText;
-                itemsText += `${count}. ${itemName} (${qty} ${unit}) - ${tot}\n`;
-                count++;
-            }
-        });
-
-        let text = `*TAX INVOICE*\n` +
-                   `🏢 *${firm.name}*\n` +
-                   `--------------------------------\n` +
-                   `📄 *Invoice No:* ${invNo} | *Date:* ${invDate}\n` +
-                   `👤 *Bill To:* ${custText}\n` +
-                   `--------------------------------\n` +
-                   `📦 *Items:*\n` + itemsText +
-                   `--------------------------------\n` +
-                   `💰 *Grand Total:* *${grandTotal}*\n` +
-                   `🔴 *Balance Due:* ${balance}\n` +
-                   `--------------------------------\n` +
-                   `🙏 Thank you for your business!`;
-        return text;
     }
 
     function shareOnWhatsApp() {
         processInvoiceSave();
-        let text = getInvoiceTextSummary();
+        let firm = companies[document.getElementById('activeFirmSelect').value] || companies[0];
+        let text = `*TAX INVOICE* - ${firm.name}\nInv #${document.getElementById('invNumber').value} | Total: ${document.getElementById('grandTotal').innerText}`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
     }
 
     function shareViaEmail() {
         processInvoiceSave();
-        let firmIdx = document.getElementById('activeFirmSelect').value;
-        let firm = companies[firmIdx] || companies[0];
-        let invNo = document.getElementById('invNumber').value;
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        
-        let subject = encodeURIComponent(`Tax Invoice #${invNo} from ${firm.name}`);
-        let body = encodeURIComponent(`Dear Customer,\n\nPlease find your tax invoice details below:\n\nInvoice No: ${invNo}\nTotal Amount: ${grandTotal}\n\nThank you,\n${firm.name}`);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        window.location.href = `mailto:?subject=Invoice&body=Please find attached invoice.`;
     }
 
     function processInvoiceSave() {
-        let firmIdx = document.getElementById('activeFirmSelect').value;
-        let firm = companies[firmIdx] || companies[0];
+        let firm = companies[document.getElementById('activeFirmSelect').value] || companies[0];
         let invNo = document.getElementById('invNumber').value;
         let invDate = document.getElementById('invDate').value;
-        
-        let custLines = document.getElementById('manualCustDetails').value.trim().split('\n');
-        let custName = custLines[0] || "Walk-in Customer";
-
-        let grandTotalText = document.getElementById('grandTotal').innerText.replace('₹','');
-        let grandTotal = parseFloat(grandTotalText) || 0;
+        let custName = document.getElementById('manualCustDetails').value.trim().split('\n')[0] || "Customer";
+        let grandTotal = parseFloat(document.getElementById('grandTotal').innerText.replace('₹','')) || 0;
         let received = parseFloat(document.getElementById('amtReceived').value) || 0;
         let balance = parseFloat(document.getElementById('balanceAmount').innerText.replace('₹','')) || 0;
         let status = balance > 0 ? 'Pending' : 'Paid';
 
-        // Collect item tax breakups for GSTR-1
         let itemBreakups = [];
-        let rows = document.querySelectorAll('#itemRows tr');
-        rows.forEach(row => {
+        document.querySelectorAll('#itemRows tr').forEach(row => {
             let nameInput = row.querySelector('.prod-name-input');
             if(nameInput && nameInput.value.trim() !== "") {
                 let hsn = row.querySelector('.hsn').value.trim() || "9403";
@@ -1106,20 +1212,8 @@ State: 01-Jammu & Kashmir</textarea>
             }
         });
 
-        let newInv = {
-            company: firm.name,
-            id: invNo,
-            date: invDate,
-            customer: custName,
-            status: status,
-            total: grandTotal,
-            received: received,
-            balance: balance,
-            items: itemBreakups
-        };
-
-        invoices.push(newInv);
-        localStorage.setItem('gs_invoices', JSON.stringify(invoices));
+        invoices.push({ company: firm.name, id: invNo, date: invDate, customer: custName, status, total: grandTotal, received, balance, items: itemBreakups });
+        syncToCloud();
         setNextInvoiceNumber();
     }
 
@@ -1136,7 +1230,7 @@ State: 01-Jammu & Kashmir</textarea>
                     <td>${inv.customer}</td>
                     <td style="color: ${inv.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">${inv.status}</td>
                     <td>₹${inv.total.toFixed(2)}</td>
-                    <td><button onclick="invoices.splice(${idx},1); localStorage.setItem('gs_invoices', JSON.stringify(invoices)); renderInvoiceHistory();" class="btn-danger" style="padding:2px 5px;">Delete</button></td>
+                    <td><button onclick="invoices.splice(${idx},1); syncToCloud(); renderInvoiceHistory();" class="btn-danger" style="padding:2px 5px;">Delete</button></td>
                 </tr>`;
         });
     }
@@ -1156,7 +1250,7 @@ State: 01-Jammu & Kashmir</textarea>
                     <td><b>${inv.customer}</b></td>
                     <td>${inv.id}</td>
                     <td style="color:red; font-weight:bold;">₹${inv.balance.toFixed(2)}</td>
-                    <td><button class="btn-success" onclick="markPaid('${inv.id}')" style="padding:3px 6px; font-size:11px;">Clear</button></td>
+                    <td><button class="btn-success" onclick="markPaid('${inv.id}')" style="padding:3px 6px;">Clear</button></td>
                 </tr>`;
         });
     }
@@ -1167,41 +1261,27 @@ State: 01-Jammu & Kashmir</textarea>
             inv.balance = 0;
             inv.received = inv.total;
             inv.status = 'Paid';
-            localStorage.setItem('gs_invoices', JSON.stringify(invoices));
+            syncToCloud();
             renderLedger();
         }
     }
 
     function renderReports() {
-        let totalSales = 0;
-        let totalReceived = 0;
-        let totalPending = 0;
+        let totalSales = 0, totalReceived = 0, totalPending = 0;
         let tbody = document.getElementById('dayBookTableBody');
         let gstrTbody = document.getElementById('gstr1TableBody');
         if(!tbody) return;
-        
-        tbody.innerHTML = '';
-        gstrTbody.innerHTML = '';
+        tbody.innerHTML = ''; gstrTbody.innerHTML = '';
 
-        if(invoices.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:10px;">No transactions recorded yet.</td></tr>`;
-            gstrTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:10px;">No GST data available.</td></tr>`;
-        }
-
-        // GSTR-1 Aggregator Map
         let gstrMap = {};
-
         invoices.slice().reverse().forEach(inv => {
             totalSales += inv.total;
-            totalReceived += (inv.received !== undefined ? inv.received : (inv.total - (inv.balance || 0)));
+            totalReceived += (inv.received || 0);
             totalPending += (inv.balance || 0);
 
-            // Aggregate items for GSTR-1
             if(inv.items) {
                 inv.items.forEach(it => {
-                    if(!gstrMap[it.hsn]) {
-                        gstrMap[it.hsn] = { taxable: 0, cgst: 0, sgst: 0, totalTax: 0 };
-                    }
+                    if(!gstrMap[it.hsn]) gstrMap[it.hsn] = { taxable: 0, cgst: 0, sgst: 0, totalTax: 0 };
                     gstrMap[it.hsn].taxable += it.taxable;
                     gstrMap[it.hsn].cgst += it.cgst;
                     gstrMap[it.hsn].sgst += it.sgst;
@@ -1211,11 +1291,9 @@ State: 01-Jammu & Kashmir</textarea>
 
             tbody.innerHTML += `
                 <tr>
-                    <td>${inv.date}</td>
-                    <td>${inv.id}</td>
-                    <td><b>${inv.customer}</b></td>
+                    <td>${inv.date}</td><td>${inv.id}</td><td><b>${inv.customer}</b></td>
                     <td>₹${inv.total.toFixed(2)}</td>
-                    <td style="color: ${inv.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">${inv.status}</td>
+                    <td style="color: ${inv.status === 'Paid' ? 'green' : 'red'};">${inv.status}</td>
                 </tr>`;
         });
 
@@ -1223,11 +1301,7 @@ State: 01-Jammu & Kashmir</textarea>
             let g = gstrMap[hsn];
             gstrTbody.innerHTML += `
                 <tr>
-                    <td><b>${hsn}</b></td>
-                    <td>₹${g.taxable.toFixed(2)}</td>
-                    <td>₹${g.cgst.toFixed(2)}</td>
-                    <td>₹${g.sgst.toFixed(2)}</td>
-                    <td><b>₹${g.totalTax.toFixed(2)}</b></td>
+                    <td><b>${hsn}</b></td><td>₹${g.taxable.toFixed(2)}</td><td>₹${g.cgst.toFixed(2)}</td><td>₹${g.sgst.toFixed(2)}</td><td><b>₹${g.totalTax.toFixed(2)}</b></td>
                 </tr>`;
         }
 
@@ -1238,21 +1312,18 @@ State: 01-Jammu & Kashmir</textarea>
 
     function saveProduct() {
         let name = document.getElementById('prodName').value.trim();
-        let barcode = document.getElementById('prodBarcode').value.trim();
+        let barcode = document.getElementById('prodBarcode').value.trim() || ("BAR" + Math.floor(1000 + Math.random() * 9000));
         let hsn = document.getElementById('prodHsn').value.trim();
         let price = parseFloat(document.getElementById('prodPrice').value) || 0;
         let gst = parseFloat(document.getElementById('prodGst').value) || 18;
         let stock = parseInt(document.getElementById('prodStock').value) || 0;
         
-        if(!name) { alert("Product name zaroori hai!"); return; }
-        if(!barcode) {
-            barcode = "BAR" + Math.floor(1000 + Math.random() * 9000);
-        }
+        if(!name) { alert("Product name required!"); return; }
 
         inventory.push({name, barcode, hsn, price, gst, stock});
-        localStorage.setItem('gs_inventory', JSON.stringify(inventory));
+        syncToCloud();
         renderInventoryTable();
-        alert("Product and Barcode saved successfully!");
+        alert("Product saved!");
     }
 
     function renderInventoryTable() {
@@ -1269,7 +1340,7 @@ State: 01-Jammu & Kashmir</textarea>
                     <td>₹${p.price}</td>
                     <td>${p.gst}%</td>
                     <td>${p.stock} ${isLow ? '⚠️ Low Stock!' : ''}</td>
-                    <td><button onclick="inventory.splice(${idx},1); localStorage.setItem('gs_inventory', JSON.stringify(inventory)); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td>
+                    <td><button onclick="inventory.splice(${idx},1); syncToCloud(); renderInventoryTable();" class="btn-danger" style="padding:2px 5px;">X</button></td>
                 </tr>`;
         });
     }
@@ -1280,7 +1351,6 @@ State: 01-Jammu & Kashmir</textarea>
         document.getElementById('amtReceived').value = 0;
         document.getElementById('manualCustDetails').value = '';
         document.getElementById('invoiceCustDropdown').value = '';
-        document.getElementById('invoiceRemarks').value = '';
         calculateTotals();
         setNextInvoiceNumber();
     }
