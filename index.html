@@ -1137,7 +1137,39 @@ function initReportFirmDropdown() {
 }
 
 // Jab dropdown se koi firm select ki jaye
+function // Jab dropdown se koi firm select ki jaye
 function filterReportByFirm() {
+    const selectedFirmName = document.getElementById('reportFirmFilter').value;
+    const titleElem = document.getElementById('repFirmTitle');
+    const detailsElem = document.getElementById('repFirmDetails');
+
+    let firmList = [];
+    if (typeof companies !== 'undefined') firmList = companies;
+    else if (typeof firms !== 'undefined') firmList = firms;
+    else if (typeof savedCompanies !== 'undefined') firmList = savedCompanies;
+
+    if(selectedFirmName === 'ALL') {
+        titleElem.innerText = "All Firms Summary";
+        detailsElem.innerText = "Showing combined reports for all registered business profiles.";
+    } else {
+        const firmObj = firmList.find(c => (c.name || c.firmName || c.companyName) === selectedFirmName);
+        if(firmObj) {
+            titleElem.innerText = firmObj.name || firmObj.firmName || firmObj.companyName;
+            detailsElem.innerHTML = `GSTIN: <strong>${firmObj.gstin || 'N/A'}</strong> | Phone: ${firmObj.phone || 'N/A'} | Address: ${firmObj.address || 'N/A'}`;
+        }
+    }
+
+    // GSTR-1 ya reports ko update karne ke liye aam functions ko trigger karna
+    if (typeof loadGSTR1 === 'function') {
+        loadGSTR1(selectedFirmName);
+    } else if (typeof generateReport === 'function') {
+        generateReport(selectedFirmName);
+    } else if (typeof renderReports === 'function') {
+        renderReports(selectedFirmName);
+    } else if (typeof displayReports === 'function') {
+        displayReports(selectedFirmName);
+    }
+} {
     const selectedFirmName = document.getElementById('reportFirmFilter').value;
     const titleElem = document.getElementById('repFirmTitle');
     const detailsElem = document.getElementById('repFirmDetails');
