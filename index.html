@@ -686,355 +686,284 @@ State: 01-Jammu & Kashmir</textarea>
     }
 
     function stopCameraScanner() {
+        try {function startCameraScannerForInventory() {
+        startCameraScanner('inventory');
+    }
+
+    function stopCameraScanner() {
         try { Quagga.stop(); } catch(e) {}
         document.getElementById('scannerModal').style.display = 'none';
     }
 
     function onBarcodeScannedFromCamera(result) {
         let code = result.codeResult.code;
-        let currentTime = new Date().getTime();
-
-        if (code === lastScannedCode && (currentTime - lastScanTime < 2000)) {
-            return; 
-        }
-        
+        let now = Date.now();
+        if (code === lastScannedCode && now - lastScanTime < 3000) return;
         lastScannedCode = code;
-        lastScanTime = currentTime;
+        lastScanTime = now;
+
         stopCameraScanner();
 
-        if(activeScannerTarget === 'global') {
-            document.getElementById('globalBarcodeScan').value = code;
-            handleGlobalBarcode({ key: 'Enter', preventDefault: () => {} });
-        } else if(activeScannerTarget === 'inventory') {
+        if (activeScannerTarget === 'inventory') {
             document.getElementById('prodBarcode').value = code;
+            alert("Barcode scanned: " + code);
+        } else {
+            handleScannedBarcode(code);
         }
-    }
-
-    function setNextInvoiceNumber() {
-        if(invoices.length > 0) {
-            let lastInv = invoices[invoices.length - 1];
-            let lastNum = parseInt(lastInv.id);
-            if(!isNaN(lastNum)) {
-                document.getElementById('invNumber').value = lastNum + 1;
-            }
-        }
-    }
-
-    function populateFirmDropdowns() {
-        let sel = document.getElementById('activeFirmSelect');
-        sel.innerHTML = '';
-        companies.forEach((c, idx) => {
-            let opt = document.createElement('option');
-            opt.value = idx;
-            opt.innerText = c.name;
-            sel.appendChild(opt);
-        });
-    }
-
-    function populateCustomerDropdown() {
-        let sel = document.getElementById('invoiceCustDropdown');
-        sel.innerHTML = '<option value="">-- Select Customer from List --</option>';
-        customers.forEach((cust, idx) => {
-            let opt = document.createElement('option');
-            opt.value = idx;
-            opt.innerText = cust.name;
-            sel.appendChild(opt);
-        });
-    }
-
-    function onFirmChange() {
-        let idx = document.getElementById('activeFirmSelect').value;
-        if(companies[idx]) {
-            let c = companies[idx];
-            document.getElementById('lblCompanyName').innerText = c.name;
-            document.getElementById('lblCompanyDetails').innerText = c.address + "\nPhone: " + c.phone + "  GSTIN: " + c.gstin;
-            document.getElementById('lblBankDetails').innerHTML = "Bank Name: " + c.bankName + "<br>A/C No: " + c.accNo + "<br>IFSC: " + c.ifsc;
-            document.getElementById('lblSignCompanyName').innerText = "For " + c.name + " :";
-        }
-    }
-
-    function onCustomerSelected() {
-        let idx = document.getElementById('invoiceCustDropdown').value;
-        if(idx !== "") {
-            let cust = customers[idx];
-            let text = cust.name + "\n" + cust.address + "\nGSTIN: " + (cust.gstin || "Unregistered") + "\nState: " + (cust.state || "01-Jammu & Kashmir");
-            document.getElementById('manualCustDetails').value = text;
-        }
-    }
-
-    function addItemRow(itemData = null) {
-        let tbody = document.getElementById('itemRows');
-        let rowCount = tbody.rows.length + 1;
-        let tr = document.createElement('tr');
-
-        tr.innerHTML = `
-            <td>${rowCount}</td>
-            <td><input type="text" class="input-field itemName" value="${itemData ? itemData.name : ''}" placeholder="Item Name..." oninput="searchProducts(this)"></td>
-            <td><input type="text" class="input-field itemBarcode" value="${itemData ? itemData.barcode : ''}" placeholder="Barcode"></td>
-            <td><input type="text" class="input-field itemHsn" value="${itemData ? itemData.hsn : '9403'}" placeholder="HSN"></td>
-            <td><input type="number" class="input-field itemQty" value="${itemData ? itemData.qty : 1}" oninput="calculateTotals()" style="text-align:center;"></td>
-            <td>
-                <select class="input-field itemUnit">
-                    <option value="Nos">Nos</option>
-                    <option value="Pcs">Pcs</option>
-                    <option value="Set">Set</option>
-                    <option value="Kg">Kg</option>
-                </select>
-            </td>
-            <td><input type="number" class="input-field itemPrice" value="${itemData ? itemData.price : 0}" oninput="calculateTotals()" style="text-align:right;"></td>
-            <td>
-                <select class="input-field itemGst" onchange="calculateTotals()">
-                    <option value="18" ${itemData && itemData.gst == 18 ? 'selected':''}>18%</option>
-                    <option value="12" ${itemData && itemData.gst == 12 ? 'selected':''}>12%</option>
-                    <option value="28" ${itemData && itemData.gst == 28 ? 'selected':''}>28%</option>
-                    <option value="5" ${itemData && itemData.gst == 5 ? 'selected':''}>5%</option>
-                    <option value="0" ${itemData && itemData.gst == 0 ? 'selected':''}>0%</option>
-                </select>
-            </td>
-            <td class="itemGstAmt right">0.00</td>
-            <td class="itemTotal right font-weight:bold;">0.00</td>
-            <td class="no-print"><button class="btn-danger" onclick="this.closest('tr').remove(); calculateTotals();">X</button></td>
-        `;
-        tbody.appendChild(tr);
-        calculateTotals();
     }
 
     function handleGlobalBarcode(e) {
-        if(e.key === 'Enter') {
-            e.preventDefault();
+        if (e.key === 'Enter') {
             let val = document.getElementById('globalBarcodeScan').value.trim();
-            let found = inventory.find(i => i.barcode === val || i.name.toLowerCase().includes(val.toLowerCase()));
-            if(found) {
-                addItemRow({ name: found.name, barcode: found.barcode, hsn: found.hsn, price: found.price, gst: found.gst, qty: 1 });
+            if (val) {
+                handleScannedBarcode(val);
                 document.getElementById('globalBarcodeScan').value = '';
+            }
+        }
+    }
+
+    function handleScannedBarcode(code) {
+        let item = inventory.find(p => p.barcode === code);
+        if (!item) {
+            alert("Product with barcode '" + code + "' not found in inventory!");
+            return;
+        }
+
+        let rows = document.getElementById('itemRows').rows;
+        let foundRow = false;
+
+        for (let i = 0; i < rows.length; i++) {
+            let row = rows[i];
+            let nameInput = row.cells[1].querySelector('input');
+            if (nameInput && nameInput.value === item.name) {
+                let qtyInput = row.cells[4].querySelector('input');
+                qtyInput.value = parseInt(qtyInput.value || 0) + 1;
+                foundRow = true;
+                break;
+            }
+        }
+
+        if (!foundRow) {
+            let lastRow = rows[rows.length - 1];
+            let nameInput = lastRow.cells[1].querySelector('input');
+            if (nameInput && nameInput.value === '') {
+                fillRowWithProduct(lastRow, item);
             } else {
-                alert("Product nahi mila!");
+                addItemRow();
+                let newRows = document.getElementById('itemRows').rows;
+                fillRowWithProduct(newRows[newRows.length - 1], item);
             }
         }
-    }
-
-    function searchProducts(input) {
-        // Auto-complete suggestion logic can be added here if required
-    }
-
-    function calculateTotals() {
-        let rows = document.querySelectorAll('#itemRows tr');
-        let subTotal = 0;
-        let totalGst = 0;
-        let taxSummary = {};
-        let priceMode = document.querySelector('input[name="priceMode"]:checked').value;
-
-        rows.forEach(tr => {
-            let qty = parseFloat(tr.querySelector('.itemQty').value) || 0;
-            let price = parseFloat(tr.querySelector('.itemPrice').value) || 0;
-            let gstRate = parseFloat(tr.querySelector('.itemGst').value) || 0;
-            let hsn = tr.querySelector('.itemHsn').value || '9403';
-
-            let taxable = 0;
-            let gstAmt = 0;
-            let totalAmt = 0;
-
-            if(priceMode === 'inclusive') {
-                totalAmt = qty * price;
-                taxable = totalAmt / (1 + (gstRate / 100));
-                gstAmt = totalAmt - taxable;
-            } else {
-                taxable = qty * price;
-                gstAmt = taxable * (gstRate / 100);
-                totalAmt = taxable + gstAmt;
-            }
-
-            tr.querySelector('.itemGstAmt').innerText = gstAmt.toFixed(2);
-            tr.querySelector('.itemTotal').innerText = totalAmt.toFixed(2);
-
-            subTotal += taxable;
-            totalGst += gstAmt;
-
-            if(!taxSummary[hsn]) {
-                taxSummary[hsn] = { taxable: 0, gst: gstRate, cgstAmt: 0, sgstAmt: 0 };
-            }
-            taxSummary[hsn].taxable += taxable;
-            taxSummary[hsn].cgstAmt += (gstAmt / 2);
-            taxSummary[hsn].sgstAmt += (gstAmt / 2);
-        });
-
-        let grandTotal = subTotal + totalGst;
-        document.getElementById('subTotal').innerText = subTotal.toFixed(2);
-        document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
-        document.getElementById('amountInWords').innerText = numberToWords(Math.round(grandTotal));
-
-        let received = parseFloat(document.getElementById('amtReceived').value) || 0;
-        let balance = grandTotal - received;
-        document.getElementById('balanceAmount').innerText = balance.toFixed(2);
-
-        // Render Tax Summary
-        let taxTbody = document.getElementById('taxSummaryRows');
-        taxTbody.innerHTML = '';
-        for(let hsn in taxSummary) {
-            let t = taxSummary[hsn];
-            let tr = document.createElement('tr');
-            let halfRate = t.gst / 2;
-            tr.innerHTML = `
-                <td>${hsn}</td>
-                <td>${t.taxable.toFixed(2)}</td>
-                <td>${halfRate}%</td>
-                <td>${t.cgstAmt.toFixed(2)}</td>
-                <td>${halfRate}%</td>
-                <td>${t.sgstAmt.toFixed(2)}</td>
-                <td>${(t.cgstAmt + t.sgstAmt).toFixed(2)}</td>
-            `;
-            taxTbody.appendChild(tr);
-        }
-    }
-
-    function numberToWords(num) {
-        if (num === 0) return "Zero Rupees Only";
-        let a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
-        let b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-
-        function inWords(n) {
-            if ((n = n.toString()).length > 9) return 'overflow';
-            let n_array = ('000000000' + n).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-            if (!n_array) return;
-            let str = '';
-            str += (n_array[1] != 0) ? (a[Number(n_array[1])] || b[n_array[1][0]] + ' ' + a[n_array[1][1]]) + 'Crore ' : '';
-            str += (n_array[2] != 0) ? (a[Number(n_array[2])] || b[n_array[2][0]] + ' ' + a[n_array[2][1]]) + 'Lakh ' : '';
-            str += (n_array[3] != 0) ? (a[Number(n_array[3])] || b[n_array[3][0]] + ' ' + a[n_array[3][1]]) + 'Thousand ' : '';
-            str += (n_array[4] != 0) ? (a[Number(n_array[4])] || b[n_array[4][0]] + ' ' + a[n_array[4][1]]) + 'Hundred ' : '';
-            str += (n_array[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n_array[5])] || b[n_array[5][0]] + ' ' + a[n_array[5][1]]) : '';
-            return str.trim();
-        }
-        return inWords(num) + " Rupees Only";
-    }
-
-    function switchTab(tabName, event) {
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabName + 'Panel').classList.add('active');
-        if(event) event.target.classList.add('active');
-
-        if(tabName === 'history') renderHistoryTable();
-        if(tabName === 'ledger') renderLedgerTable();
-        if(tabName === 'reports') renderReports();
-    }
-
-    function saveAndPrintInvoice() {
-        let invNo = document.getElementById('invNumber').value;
-        let firmIdx = document.getElementById('activeFirmSelect').value;
-        let firmName = companies[firmIdx] ? companies[firmIdx].name : '';
-        let custText = document.getElementById('manualCustDetails').value;
-        let custName = custText.split('\n')[0] || "Cash Customer";
-        let grandTotal = parseFloat(document.getElementById('grandTotal').innerText) || 0;
-        let balance = parseFloat(document.getElementById('balanceAmount').innerText) || 0;
-        let date = document.getElementById('invDate').value;
-
-        let invObj = {
-            id: invNo,
-            firm: firmName,
-            date: date,
-            customer: custName,
-            status: balance > 0 ? "Pending" : "Paid",
-            total: grandTotal,
-            balance: balance
-        };
-
-        invoices.push(invObj);
-        syncToCloud();
-        window.print();
-        setNextInvoiceNumber();
-    }
-
-    function openThermalReceipt() {
-        let firmIdx = document.getElementById('activeFirmSelect').value;
-        let firm = companies[firmIdx];
-        let custText = document.getElementById('manualCustDetails').value;
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        
-        let content = `=== ${firm.name} ===\n${firm.address}\nPhone: ${firm.phone}\n--------------------------------\nBill To:\n${custText}\n--------------------------------\n`;
-        document.querySelectorAll('#itemRows tr').forEach(tr => {
-            let name = tr.querySelector('.itemName').value;
-            let qty = tr.querySelector('.itemQty').value;
-            let total = tr.querySelector('.itemTotal').innerText;
-            content += `${name} x ${qty} = ₹${total}\n`;
-        });
-        content += `--------------------------------\nGRAND TOTAL: ₹${grandTotal}\n================================\nThank You For Visit!`;
-        document.getElementById('thermalContent').innerText = content;
-        document.getElementById('thermalReceiptModal').style.display = 'flex';
-    }
-
-    function downloadOrSharePDF() {
-        window.print();
-    }
-
-    function shareOnWhatsApp() {
-        let custText = document.getElementById('manualCustDetails').value;
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        let text = encodeURIComponent(`Hello, here is your invoice bill total amount: ₹${grandTotal}.\nThank you for business with us!`);
-        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-    }
-
-    function shareViaEmail() {
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        let subject = encodeURIComponent("Your Tax Invoice Bill");
-        let body = encodeURIComponent(`Please find your invoice bill amounting to ₹${grandTotal}.`);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    }
-
-    function resetInvoiceForm() {
-        document.getElementById('itemRows').innerHTML = '';
-        addItemRow();
-        document.getElementById('amtReceived').value = 0;
         calculateTotals();
     }
 
-    function renderHistoryTable() {
-        let tbody = document.getElementById('historyTableBody');
-        tbody.innerHTML = '';
-        invoices.forEach(inv => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${inv.firm}</td><td>${inv.id}</td><td>${inv.date}</td><td>${inv.customer}</td><td>${inv.status}</td><td>₹${inv.total.toFixed(2)}</td><td><button class="btn-info" onclick="alert('Viewing invoice: ${inv.id}')">View</button></td>`;
-            tbody.appendChild(tr);
-        });
+    function fillRowWithProduct(row, item) {
+        row.cells[1].querySelector('input').value = item.name;
+        row.cells[2].querySelector('input').value = item.barcode || '';
+        row.cells[3].querySelector('input').value = item.hsn || '';
+        row.cells[4].querySelector('input').value = 1;
+        row.cells[6].querySelector('input').value = item.price;
+        row.cells[7].querySelector('select').value = item.gst;
+        calculateRowTotal(row.querySelector('input'));
     }
 
-    function renderLedgerTable() {
-        let tbody = document.getElementById('ledgerTableBody');
-        tbody.innerHTML = '';
-        invoices.filter(i => i.balance > 0).forEach(inv => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${inv.customer}</td><td>${inv.id}</td><td style="color:red; font-weight:bold;">₹${inv.balance.toFixed(2)}</td><td><button class="btn-success" onclick="alert('Settling payment...')">Clear Due</button></td>`;
-            tbody.appendChild(tr);
-        });
+    function addItemRow() {
+        let tbody = document.getElementById('itemRows');
+        let rowCount = tbody.rows.length + 1;
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${rowCount}</td>
+            <td class="left"><input type="text" class="input-field" list="productList" placeholder="Select/Type Item" onchange="onItemNameChanged(this)"></td>
+            <td><input type="text" class="input-field" placeholder="Barcode"></td>
+            <td><input type="text" class="input-field" placeholder="HSN"></td>
+            <td><input type="number" class="input-field" value="1" min="1" oninput="calculateTotals()"></td>
+            <td>
+                <select class="input-field">
+                    <option value="PCS">PCS</option>
+                    <option value="BOX">BOX</option>
+                    <option value="KG">KG</option>
+                    <option value="MTR">MTR</option>
+                </select>
+            </td>
+            <td><input type="number" step="any" class="input-field" value="0" oninput="calculateTotals()"></td>
+            <td>
+                <select class="input-field" onchange="calculateTotals()">
+                    <option value="18">18%</option>
+                    <option value="12">12%</option>
+                    <option value="28">28%</option>
+                    <option value="5">5%</option>
+                    <option value="0">0%</option>
+                </select>
+            </td>
+            <td class="right" style="font-weight:bold;">0.00</td>
+            <td class="right" style="font-weight:bold;">0.00</td>
+            <td class="no-print"><button class="btn-danger" onclick="deleteItemRow(this)" style="padding:2px 6px;">X</button></td>
+        `;
+        tbody.appendChild(tr);
+        updateProductDatalist();
     }
 
-    function renderReports() {
-        let totalSales = invoices.reduce((sum, i) => sum + i.total, 0);
-        let totalPending = invoices.reduce((sum, i) => sum + i.balance, 0);
-        let totalReceived = totalSales - totalPending;
+    function updateProductDatalist() {
+        let existingDatalist = document.getElementById('productList');
+        if (existingDatalist) existingDatalist.remove();
 
-        document.getElementById('repTotalSales').innerText = "₹" + totalSales.toFixed(2);
-        document.getElementById('repTotalReceived').innerText = "₹" + totalReceived.toFixed(2);
-        document.getElementById('repTotalPending').innerText = "₹" + totalPending.toFixed(2);
-
-        let dayBookBody = document.getElementById('dayBookTableBody');
-        dayBookBody.innerHTML = '';
-        invoices.forEach(inv => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${inv.date}</td><td>${inv.id}</td><td>${inv.customer}</td><td>₹${inv.total.toFixed(2)}</td><td>${inv.status}</td>`;
-            dayBookBody.appendChild(tr);
+        let dl = document.createElement('datalist');
+        dl.id = 'productList';
+        inventory.forEach(p => {
+            let opt = document.createElement('option');
+            opt.value = p.name;
+            dl.appendChild(opt);
         });
+        document.body.appendChild(dl);
+    }
+
+    function onItemNameChanged(input) {
+        let val = input.value;
+        let item = inventory.find(p => p.name === val);
+        if (item) {
+            let row = input.closest('tr');
+            fillRowWithProduct(row, item);
+        }
+    }
+
+    function deleteItemRow(btn) {
+        let row = btn.closest('tr');
+        if (document.getElementById('itemRows').rows.length > 1) {
+            row.remove();
+            renumberRows();
+            calculateTotals();
+        } else {
+            alert("At least one item row is required.");
+        }
+    }
+
+    function renumberRows() {
+        let rows = document.getElementById('itemRows').rows;
+        for (let i = 0; i < rows.length; i++) {
+            rows[i].cells[0].innerText = i + 1;
+        }
+    }
+
+    function calculateTotals() {
+        let rows = document.getElementById('itemRows').rows;
+        let subTotal = 0;
+        let grandTotal = 0;
+        let taxMap = {};
+        let isInclusive = document.querySelector('input[name="priceMode"]:checked').value === 'inclusive';
+
+        for (let i = 0; i < rows.length; i++) {
+            let row = rows[i];
+            let qty = parseFloat(row.cells[4].querySelector('input').value) || 0;
+            let rate = parseFloat(row.cells[6].querySelector('input').value) || 0;
+            let gstRate = parseFloat(row.cells[7].querySelector('select').value) || 0;
+            let hsn = row.cells[3].querySelector('input').value.trim() || "DEFAULT";
+
+            let taxableAmt = 0;
+            let gstAmt = 0;
+            let totalLineAmt = 0;
+
+            if (isInclusive) {
+                totalLineAmt = qty * rate;
+                taxableAmt = totalLineAmt / (1 + (gstRate / 100));
+                gstAmt = totalLineAmt - taxableAmt;
+            } else {
+                taxableAmt = qty * rate;
+                gstAmt = taxableAmt * (gstRate / 100);
+                totalLineAmt = taxableAmt + gstAmt;
+            }
+
+            row.cells[8].innerText = gstAmt.toFixed(2);
+            row.cells[9].innerText = totalLineAmt.toFixed(2);
+
+            subTotal += taxableAmt;
+            grandTotal += totalLineAmt;
+
+            if (!taxMap[hsn]) {
+                taxMap[hsn] = { taxable: 0, gst: 0, rate: gstRate };
+            }
+            taxMap[hsn].taxable += taxableAmt;
+            taxMap[hsn].gst += gstAmt;
+        }
+
+        document.getElementById('subTotal').innerText = subTotal.toFixed(2);
+        document.getElementById('grandTotal').innerText = Math.round(grandTotal).toFixed(2);
+        document.getElementById('amountInWords').innerText = convertNumberToWords(Math.round(grandTotal));
+
+        renderTaxSummary(taxMap);
+        calculateBalance();
+    }
+
+    function calculateRowTotal(input) {
+        calculateTotals();
+    }
+
+    function renderTaxSummary(taxMap) {
+        let tbody = document.getElementById('taxSummaryRows');
+        tbody.innerHTML = '';
+        let totalCgstAmt = 0;
+        let totalSgstAmt = 0;
+        let totalTaxAmt = 0;
+
+        for (let hsn in taxMap) {
+            let data = taxMap[hsn];
+            let halfRate = data.rate / 2;
+            let halfGst = data.gst / 2;
+
+            totalCgstAmt += halfGst;
+            totalSgstAmt += halfGst;
+            totalTaxAmt += data.gst;
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${hsn}</td>
+                <td class="right">${data.taxable.toFixed(2)}</td>
+                <td>${halfRate}%</td>
+                <td class="right">${halfGst.toFixed(2)}</td>
+                <td>${halfRate}%</td>
+                <td class="right">${halfGst.toFixed(2)}</td>
+                <td class="right">${data.gst.toFixed(2)}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+
+    function calculateBalance() {
+        let grandTotal = parseFloat(document.getElementById('grandTotal').innerText) || 0;
+        let received = parseFloat(document.getElementById('amtReceived').value) || 0;
+        let balance = grandTotal - received;
+        let balElem = document.getElementById('balanceAmount');
+        balElem.innerText = balance.toFixed(2);
+        balElem.style.color = balance > 0 ? '#b30000' : 'green';
+    }
+
+    function convertNumberToWords(amount) {
+        if (amount === 0) return "Zero Rupees Only";
+        let words = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+        let tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+        function convert(num) {
+            if (num < 20) return words[num];
+            if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? " " + words[num % 10] : "");
+            if (num < 1000) return words[Math.floor(num / 100)] + " Hundred" + (num % 100 ? " " + convert(num % 100) : "");
+            if (num < 100000) return convert(Math.floor(num / 1000)) + " Thousand" + (num % 1000 ? " " + convert(num % 1000) : "");
+            if (num < 10000000) return convert(Math.floor(num / 100000)) + " Lakh" + (num % 100000 ? " " + convert(num % 100000) : "");
+            return convert(Math.floor(num / 10000000)) + " Crore" + (num % 10000000 ? " " + convert(num % 10000000) : "");
+        }
+        return convert(amount) + " Rupees Only";
     }
 
     function saveBusinessProfile() {
-        let name = document.getElementById('busName').value;
-        if(!name) return alert("Firm name is required!");
+        let name = document.getElementById('busName').value.trim();
+        if (!name) { alert("Firm name required!"); return; }
         companies.push({
             name: name,
-            prefix: document.getElementById('busPrefix').value,
-            address: document.getElementById('busAddress').value,
-            phone: document.getElementById('busPhone').value,
-            gstin: document.getElementById('busGstin').value,
-            bankName: "Bank Name", accNo: "A/C", ifsc: "IFSC"
+            prefix: document.getElementById('busPrefix').value.trim(),
+            address: document.getElementById('busAddress').value.trim(),
+            phone: document.getElementById('busPhone').value.trim(),
+            gstin: document.getElementById('busGstin').value.trim(),
+            bankName: "Jammu And Kashmir Bank Limited",
+            accNo: "0002010100008509",
+            ifsc: "JAKAOSQUARE"
         });
         syncToCloud();
         populateFirmDropdowns();
@@ -1052,14 +981,53 @@ State: 01-Jammu & Kashmir</textarea>
         });
     }
 
+    function populateFirmDropdowns() {
+        let selectActive = document.getElementById('activeFirmSelect');
+        let selectReport = document.getElementById('reportFirmFilter');
+        selectActive.innerHTML = '';
+        selectReport.innerHTML = '<option value="ALL">All Firms Combined</option>';
+
+        companies.forEach(c => {
+            let opt1 = document.createElement('option');
+            opt1.value = c.name;
+            opt1.innerText = c.name;
+            selectActive.appendChild(opt1);
+
+            let opt2 = document.createElement('option');
+            opt2.value = c.name;
+            opt2.innerText = c.name;
+            selectReport.appendChild(opt2);
+        });
+    }
+
+    function onFirmChange() {
+        let firmName = document.getElementById('activeFirmSelect').value;
+        let firm = companies.find(c => c.name === firmName);
+        if (!firm) return;
+
+        document.getElementById('lblCompanyName').innerText = firm.name;
+        document.getElementById('lblCompanyDetails').innerHTML = `${firm.address}<br>Phone: ${firm.phone} | GSTIN: ${firm.gstin}`;
+        document.getElementById('lblBankDetails').innerHTML = `Bank Name: ${firm.bankName || 'N/A'}<br>A/c No: ${firm.accNo || 'N/A'}<br>IFSC: ${firm.ifsc || 'N/A'}`;
+        document.getElementById('lblSignCompanyName').innerText = `For ${firm.name} :`;
+        setNextInvoiceNumber();
+    }
+
+    function setNextInvoiceNumber() {
+        let firmName = document.getElementById('activeFirmSelect').value;
+        let firm = companies.find(c => c.name === firmName);
+        let prefix = firm ? (firm.prefix || 'GS') : 'GS';
+        let count = invoices.filter(inv => inv.firm === firmName).length + 1;
+        document.getElementById('invNumber').value = prefix + "-" + count;
+    }
+
     function saveCustomer() {
-        let name = document.getElementById('newCustName').value;
-        if(!name) return alert("Customer name is required!");
+        let name = document.getElementById('newCustName').value.trim();
+        if (!name) { alert("Customer name required!"); return; }
         customers.push({
             name: name,
-            address: document.getElementById('newCustAddress').value,
-            phone: document.getElementById('newCustPhone').value,
-            gstin: document.getElementById('newCustGstin').value,
+            address: document.getElementById('newCustAddress').value.trim(),
+            phone: document.getElementById('newCustPhone').value.trim(),
+            gstin: document.getElementById('newCustGstin').value.trim() || "Unregistered",
             state: "01-Jammu & Kashmir"
         });
         syncToCloud();
@@ -1068,23 +1036,42 @@ State: 01-Jammu & Kashmir</textarea>
         alert("Customer saved successfully!");
     }
 
+    function populateCustomerDropdown() {
+        let select = document.getElementById('invoiceCustDropdown');
+        select.innerHTML = '<option value="">-- Select Customer --</option>';
+        customers.forEach((c, idx) => {
+            let opt = document.createElement('option');
+            opt.value = idx;
+            opt.innerText = c.name;
+            select.appendChild(opt);
+        });
+    }
+
+    function onCustomerSelected() {
+        let idx = document.getElementById('invoiceCustDropdown').value;
+        if (idx === "") return;
+        let c = customers[idx];
+        let text = `${c.name}\n${c.address}, ${c.state}, India\nGSTIN: ${c.gstin}\nState: ${c.state}`;
+        document.getElementById('manualCustDetails').value = text;
+    }
+
     function renderCustomerTable() {
         let tbody = document.getElementById('customerTableBody');
         tbody.innerHTML = '';
-        customers.forEach((cust, idx) => {
+        customers.forEach((c, idx) => {
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${cust.name}</td><td>${cust.phone}</td><td>${cust.gstin}<br>${cust.address}</td><td>₹0.00</td><td><button class="btn-danger" onclick="customers.splice(${idx},1); syncToCloud(); renderCustomerTable(); populateCustomerDropdown();">Delete</button></td>`;
+            tr.innerHTML = `<td>${c.name}</td><td>${c.phone}</td><td>${c.gstin}</td><td>-</td><td><button class="btn-danger" onclick="customers.splice(${idx},1); syncToCloud(); renderCustomerTable(); populateCustomerDropdown();">Delete</button></td>`;
             tbody.appendChild(tr);
         });
     }
 
     function saveProduct() {
-        let name = document.getElementById('prodName').value;
-        if(!name) return alert("Product name is required!");
+        let name = document.getElementById('prodName').value.trim();
+        if (!name) { alert("Product name required!"); return; }
         inventory.push({
             name: name,
-            barcode: document.getElementById('prodBarcode').value,
-            hsn: document.getElementById('prodHsn').value,
+            barcode: document.getElementById('prodBarcode').value.trim(),
+            hsn: document.getElementById('prodHsn').value.trim(),
             price: parseFloat(document.getElementById('prodPrice').value) || 0,
             gst: parseFloat(document.getElementById('prodGst').value) || 18,
             stock: parseInt(document.getElementById('prodStock').value) || 0
@@ -1103,108 +1090,6 @@ State: 01-Jammu & Kashmir</textarea>
             tbody.appendChild(tr);
         });
     }
-// Dropdown mein saari firms ko automatically populate karne ke liye
-function initReportFirmDropdown() {
-    const dropdown = document.getElementById('reportFirmFilter');
-    if(!dropdown) return;
-    
-    dropdown.innerHTML = '<option value="ALL">All Firms Combined</option>';
-    
-    // Alag-alag possible variable names check kar rahe hain
-    let firmList = [];
-    if (typeof companies !== 'undefined' && Array.isArray(companies)) firmList = companies;
-    else if (typeof firms !== 'undefined' && Array.isArray(firms)) firmList = firms;
-    else if (typeof savedCompanies !== 'undefined' && Array.isArray(savedCompanies)) firmList = savedCompanies;
-    else {
-        // Agar localStorage mein save ho toh wahan se uthane ki koshish
-        try {
-            let localData = localStorage.getItem('companies') || localStorage.getItem('firms');
-            if(localData) firmList = JSON.parse(localData);
-        } catch(e) {}
-    }
-
-    if(firmList.length > 0) {
-        firmList.forEach(comp => {
-            let firmName = comp.name || comp.firmName || comp.companyName;
-            if(firmName) {
-                let opt = document.createElement('option');
-                opt.value = firmName;
-                opt.textContent = firmName + (comp.gstin ? ` (${comp.gstin})` : '');
-                dropdown.appendChild(opt);
-            }
-        });
-    }
-}
-
-// Jab dropdown se koi firm select ki jaye
-function // Jab dropdown se koi firm select ki jaye
-function filterReportByFirm() {
-    const selectedFirmName = document.getElementById('reportFirmFilter').value;
-    const titleElem = document.getElementById('repFirmTitle');
-    const detailsElem = document.getElementById('repFirmDetails');
-
-    let firmList = [];
-    if (typeof companies !== 'undefined') firmList = companies;
-    else if (typeof firms !== 'undefined') firmList = firms;
-    else if (typeof savedCompanies !== 'undefined') firmList = savedCompanies;
-
-    if(selectedFirmName === 'ALL') {
-        titleElem.innerText = "All Firms Summary";
-        detailsElem.innerText = "Showing combined reports for all registered business profiles.";
-    } else {
-        const firmObj = firmList.find(c => (c.name || c.firmName || c.companyName) === selectedFirmName);
-        if(firmObj) {
-            titleElem.innerText = firmObj.name || firmObj.firmName || firmObj.companyName;
-            detailsElem.innerHTML = `GSTIN: <strong>${firmObj.gstin || 'N/A'}</strong> | Phone: ${firmObj.phone || 'N/A'} | Address: ${firmObj.address || 'N/A'}`;
-        }
-    }
-
-    // GSTR-1 ya reports ko update karne ke liye aam functions ko trigger karna
-    if (typeof loadGSTR1 === 'function') {
-        loadGSTR1(selectedFirmName);
-    } else if (typeof generateReport === 'function') {
-        generateReport(selectedFirmName);
-    } else if (typeof renderReports === 'function') {
-        renderReports(selectedFirmName);
-    } else if (typeof displayReports === 'function') {
-        displayReports(selectedFirmName);
-    }
-} {
-    const selectedFirmName = document.getElementById('reportFirmFilter').value;
-    const titleElem = document.getElementById('repFirmTitle');
-    const detailsElem = document.getElementById('repFirmDetails');
-
-    let firmList = [];
-    if (typeof companies !== 'undefined') firmList = companies;
-    else if (typeof firms !== 'undefined') firmList = firms;
-    else if (typeof savedCompanies !== 'undefined') firmList = savedCompanies;
-
-    if(selectedFirmName === 'ALL') {
-        titleElem.innerText = "All Firms Summary";
-        detailsElem.innerText = "Showing combined reports for all registered business profiles.";
-    } else {
-        const firmObj = firmList.find(c => (c.name || c.firmName || c.companyName) === selectedFirmName);
-        if(firmObj) {
-            titleElem.innerText = firmObj.name || firmObj.firmName || firmObj.companyName;
-            detailsElem.innerHTML = `GSTIN: <strong>${firmObj.gstin || 'N/A'}</strong> | Phone: ${firmObj.phone || 'N/A'} | Address: ${firmObj.address || 'N/A'}`;
-        }
-    }
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-    initReportFirmDropdown();
-    setTimeout(initReportFirmDropdown, 1000);
-});
-
-function renderInventoryTable() {
-    let tbody = document.getElementById('inventoryTableBody');
-    tbody.innerHTML = '';
-    inventory.forEach((p, idx) => {
-        let tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.name}</td><td>${p.barcode}</td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button class="btn-danger" onclick="inventory.splice(${idx},1); syncToCloud(); renderInventoryTable();">Delete</button></td>`;
-        tbody.appendChild(tr);
-    });
-}
 </script>
 
 </body>
