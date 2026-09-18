@@ -1195,19 +1195,17 @@ window.addEventListener('DOMContentLoaded', () => {
     initReportFirmDropdown();
     setTimeout(initReportFirmDropdown, 1000);
 
-  function renderInventoryTable() {
+  function renderInventoryTable() 
+function renderInventoryTable() {
         let tbody = document.getElementById('inventoryTableBody');
         tbody.innerHTML = '';
         inventory.forEach((p, idx) => {
             let tr = document.createElement('tr');
             tr.innerHTML = `<td>${p.name}</td><td>${p.barcode}</td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button class="btn-danger" onclick="inventory.splice(${idx},1); syncToCloud(); renderInventoryTable();">Delete</button></td>`;
             tbody.appendChild(tr);
-        
-    });
+        });
     }
 </script>
 
 </body>
 </html>
-
-    
