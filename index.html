@@ -1195,7 +1195,122 @@ window.addEventListener('DOMContentLoaded', () => {
     initReportFirmDropdown();
     setTimeout(initReportFirmDropdown, 1000);
 });
-</script>
+  function renderInventoryTable() {
+        let tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+        inventory.forEach((p, idx) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${p.name}</td><td>${p.barcode}</td><td>${p.hsn}</td><td>₹${p.price}</td><td>${p.gst}%</td><td>${p.stock}</td><td><button class="btn-danger" onclick="inventory.splice(${idx},1); syncToCloud(); renderInventoryTable();">Delete</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
 
+    // Dropdown mein saari firms populate karne ke liye
+    function initReportFirmDropdown() {
+        const dropdown = document.getElementById('reportFirmFilter');
+        if(!dropdown) return;
+        
+        let currentVal = dropdown.value;
+        dropdown.innerHTML = '<option value="ALL">All Firms Combined</option>';
+        
+        let firmList = [];
+        if (typeof companies !== 'undefined' && Array.isArray(companies)) firmList = companies;
+        else if (typeof firms !== 'undefined' && Array.isArray(firms)) firmList = firms;
+        else if (typeof savedCompanies !== 'undefined' && Array.isArray(savedCompanies)) firmList = savedCompanies;
+        else {
+            try {
+                let localData = localStorage.getItem('companies') || localStorage.getItem('firms');
+                if(localData) firmList = JSON.parse(localData);
+            } catch(e) {}
+        }
+
+        if(firmList.length > 0) {
+            firmList.forEach(comp => {
+                let firmName = comp.name || comp.firmName || comp.companyName;
+                if(firmName) {
+                    let opt = document.createElement('option');
+                    opt.value = firmName;
+                    opt.textContent = firmName + (comp.gstin ? ` (${comp.gstin})` : '');
+                    dropdown.appendChild(opt);
+                }
+            });
+        }
+        if(currentVal) dropdown.value = currentVal;
+    }
+
+    // Jab dropdown se firm select ki jaye (Reports aur Invoice History dono ke liye)
+    function filterReportByFirm() {
+        const selectedFirmName = document.getElementById('reportFirmFilter').value;
+        const titleElem = document.getElementById('repFirmTitle');
+        const detailsElem = document.getElementById('repFirmDetails');
+
+        let firmList = [];
+        if (typeof companies !== 'undefined') firmList = companies;
+        else if (typeof firms !== 'undefined') firmList = firms;
+        else if (typeof savedCompanies !== 'undefined') firmList = savedCompanies;
+
+        // 1. Header update karein
+        if(selectedFirmName === 'ALL') {
+            if(titleElem) titleElem.innerText = "All Firms Summary";
+            if(detailsElem) detailsElem.innerText = "Showing combined reports for all registered business profiles.";
+        } else {
+            const firmObj = firmList.find(c => (c.name || c.firmName || c.companyName) === selectedFirmName);
+            if(firmObj) {
+                if(titleElem) titleElem.innerText = firmObj.name || firmObj.firmName || firmObj.companyName;
+                if(detailsElem) detailsElem.innerHTML = `GSTIN: <strong>${firmObj.gstin || 'N/A'}</strong> | Phone: ${firmObj.phone || 'N/A'} | Address: ${firmObj.address || 'N/A'}`;
+            }
+        }
+
+        // 2. App ke main calculation/report functions trigger karein
+        try {
+            if (typeof generateReport === 'function') generateReport(selectedFirmName);
+            if (typeof loadGSTR1 === 'function') loadGSTR1(selectedFirmName);
+            if (typeof renderReports === 'function') renderReports(selectedFirmName);
+            if (typeof loadInvoices === 'function') loadInvoices(selectedFirmName);
+            if (typeof displayInvoices === 'function') displayInvoices(selectedFirmName);
+        } catch(err) {}
+
+        // 3. Page ki sari tables (Reports + Invoice History) ki rows ko smart filter karna
+        setTimeout(() => {
+            const tables = document.querySelectorAll('table');
+            tables.forEach(table => {
+                const rows = table.querySelectorAll('tr');
+                rows.forEach((row, index) => {
+                    if(index === 0) return; // Table ka heading row chhod dein
+                    let text = row.innerText || row.textContent;
+                    
+                    if(selectedFirmName === 'ALL') {
+                        row.style.display = ""; // Sabhi dikhao
+                    } else {
+                        // Agar row mein selected firm ka naam ya uska GSTIN match ho raha hai toh hi dikhao
+                        if(text.includes(selectedFirmName)) {
+                            row.style.display = "";
+                        } else {
+                            row.style.display = "none"; // Baki sab chhupa do
+                        }
+                    }
+                });
+            });
+        }, 250);
+    }
+
+    // Event listeners setup
+    document.addEventListener('DOMContentLoaded', () => {
+        initReportFirmDropdown();
+        const dropdown = document.getElementById('reportFirmFilter');
+        if(dropdown) {
+            dropdown.addEventListener('change', filterReportByFirm);
+        }
+    });
+
+    setTimeout(() => {
+        initReportFirmDropdown();
+        const dropdown = document.getElementById('reportFirmFilter');
+        if(dropdown && !dropdown.onchange) {
+            dropdown.onchange = filterReportByFirm;
+        }
+    }, 1000);
+</script>
 </body>
-</html>
+</html>  
+
