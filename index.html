@@ -219,6 +219,18 @@
         <button class="tab-btn active" onclick="switchTab('invoice', event)">Create Invoice</button>
         <button class="tab-btn" onclick="switchTab('history', event)">Invoice History</button>
         <button class="tab-btn" onclick="switchTab('ledger', event)">Pending Payments (Udhaar)</button>
+<!-- Firm Selector Filter for Reports -->
+<div style="background: #e2e8f0; padding: 12px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;" class="no-print">
+    <label style="font-weight: bold;">Filter Report By Firm:</label>
+    <select id="reportFirmFilter" class="input-field" onchange="filterReportByFirm()" style="max-width: 300px; margin-bottom: 0; font-weight: bold;">
+        <option value="ALL">All Firms Combined</option>
+    </select>
+</div>
+
+<div class="firm-report-header" style="background: #1e293b; color: #ffffff; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h2 id="repFirmTitle" style="margin: 0; font-size: 20px;">All Firms Summary</h2>
+    <p id="repFirmDetails" style="margin: 5px 0 0 0; font-size: 13px; color: #cbd5e1;">Showing combined reports for all registered business profiles.</p>
+</div>
         <button class="tab-btn" onclick="switchTab('reports', event)">📊 Reports & GSTR-1</button>
         <button class="tab-btn" onclick="switchTab('business', event)">Manage Firms</button>
         <button class="tab-btn" onclick="switchTab('customers', event)">Customers & Ledger</button>
