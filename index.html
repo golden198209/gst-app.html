@@ -1103,13 +1103,66 @@ State: 01-Jammu & Kashmir</textarea>
             tbody.appendChild(tr);
         });
     }
-<script>
-// Yeh wala JavaScript code yahan paste karna hai
+// Dropdown mein saari firms ko automatically populate karne ke liye
 function initReportFirmDropdown() {
-    ...
+    const dropdown = document.getElementById('reportFirmFilter');
+    if(!dropdown) return;
+    
+    dropdown.innerHTML = '<option value="ALL">All Firms Combined</option>';
+    
+    // Alag-alag possible variable names check kar rahe hain
+    let firmList = [];
+    if (typeof companies !== 'undefined' && Array.isArray(companies)) firmList = companies;
+    else if (typeof firms !== 'undefined' && Array.isArray(firms)) firmList = firms;
+    else if (typeof savedCompanies !== 'undefined' && Array.isArray(savedCompanies)) firmList = savedCompanies;
+    else {
+        // Agar localStorage mein save ho toh wahan se uthane ki koshish
+        try {
+            let localData = localStorage.getItem('companies') || localStorage.getItem('firms');
+            if(localData) firmList = JSON.parse(localData);
+        } catch(e) {}
+    }
+
+    if(firmList.length > 0) {
+        firmList.forEach(comp => {
+            let firmName = comp.name || comp.firmName || comp.companyName;
+            if(firmName) {
+                let opt = document.createElement('option');
+                opt.value = firmName;
+                opt.textContent = firmName + (comp.gstin ? ` (${comp.gstin})` : '');
+                dropdown.appendChild(opt);
+            }
+        });
+    }
 }
-// (baki sara JS code yhi andar rahega)
-</script>
+
+// Jab dropdown se koi firm select ki jaye
+function filterReportByFirm() {
+    const selectedFirmName = document.getElementById('reportFirmFilter').value;
+    const titleElem = document.getElementById('repFirmTitle');
+    const detailsElem = document.getElementById('repFirmDetails');
+
+    let firmList = [];
+    if (typeof companies !== 'undefined') firmList = companies;
+    else if (typeof firms !== 'undefined') firmList = firms;
+    else if (typeof savedCompanies !== 'undefined') firmList = savedCompanies;
+
+    if(selectedFirmName === 'ALL') {
+        titleElem.innerText = "All Firms Summary";
+        detailsElem.innerText = "Showing combined reports for all registered business profiles.";
+    } else {
+        const firmObj = firmList.find(c => (c.name || c.firmName || c.companyName) === selectedFirmName);
+        if(firmObj) {
+            titleElem.innerText = firmObj.name || firmObj.firmName || firmObj.companyName;
+            detailsElem.innerHTML = `GSTIN: <strong>${firmObj.gstin || 'N/A'}</strong> | Phone: ${firmObj.phone || 'N/A'} | Address: ${firmObj.address || 'N/A'}`;
+        }
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    initReportFirmDropdown();
+    setTimeout(initReportFirmDropdown, 1000);
+});
 </script>
 
 </body>
