@@ -362,14 +362,25 @@
             let prod = inventory.find(p => p.barcode === code || p.name.toLowerCase().includes(code.toLowerCase()));
             if(prod) {
                 addItemRowWithProduct(prod);
+                function onItemDropdownSelect(selectElem) {
+        let selectedName = selectElem.value;
+        let matched = inventory.find(i => i.name === selectedName);
+        if(!matched) return;
+
+        let tr = selectElem.closest('tr');
+        tr.querySelector('.row-barcode').value = matched.barcode || '';
+        tr.querySelector('.row-hsn').value = matched.hsn || '';
+        tr.querySelector('.row-price').value = matched.price;
+        tr.querySelector('.row-gst').value = matched.gst;
+        calculateTotals();
+    }
                 document.getElementById('globalBarcodeScan').value = '';
             } else {
                 alert("Product not found with barcode / search term!");
             }
         }
     }
-
-    function addItemRowWithProduct(prod) {
+function addItemRowWithProduct(prod) {
         let tbody = document.getElementById('itemRows');
         let rowCount = tbody.rows.length + 1;
         let tr = document.createElement('tr');
@@ -379,6 +390,48 @@
             let selected = (prod && prod.name === item.name) ? 'selected' : '';
             optionsHtml += `<option value="${item.name}" ${selected}>${item.name} (Stock: ${item.stock})</option>`;
         });
+
+        tr.innerHTML = `
+            <td>${rowCount}</td>
+            <td class="left">
+                <select class="input-field row-name" onchange="onItemDropdownSelect(this)" style="margin-bottom:0;">
+                    ${optionsHtml}
+                </select>
+            </td>
+            <td><input type="text" class="input-field row-barcode" value="${prod ? prod.barcode || '' : ''}" style="margin-bottom:0;"></td>
+            <td><input type="text" class="input-field row-hsn" value="${prod ? prod.hsn || '' : ''}" style="margin-bottom:0;"></td>
+            <td><input type="number" class="input-field row-qty" value="1" min="1" oninput="calculateTotals()" style="margin-bottom:0;"></td>
+            <td><input type="text" class="input-field row-unit" value="Nos" style="margin-bottom:0;"></td>
+            <td><input type="number" class="input-field row-price" value="${prod ? prod.price : 0}" step="0.01" oninput="calculateTotals()" style="margin-bottom:0;"></td>
+            <td>
+                <select class="input-field row-gst" onchange="calculateTotals()" style="margin-bottom:0;">
+                    <option value="18" ${prod && prod.gst==18?'selected':''}>18%</option>
+                    <option value="12" ${prod && prod.gst==12?'selected':''}>12%</option>
+                    <option value="28" ${prod && prod.gst==28?'selected':''}>28%</option>
+                    <option value="5" ${prod && prod.gst==5?'selected':''}>5%</option>
+                    <option value="0" ${prod && prod.gst==0?'selected':''}>0%</option>
+                </select>
+            </td>
+            <td class="row-gst-amt right">0.00</td>
+            <td class="row-total right">0.00</td>
+            <td class="no-print"><button class="btn-danger" onclick="this.closest('tr').remove(); calculateTotals();">X</button></td>
+        `;
+        tbody.appendChild(tr);
+        calculateTotals();
+    }
+
+    function onItemDropdownSelect(selectElem) {
+        let selectedName = selectElem.value;
+        let matched = inventory.find(i => i.name === selectedName);
+        if(!matched) return;
+
+        let tr = selectElem.closest('tr');
+        tr.querySelector('.row-barcode').value = matched.barcode || '';
+        tr.querySelector('.row-hsn').value = matched.hsn || '';
+        tr.querySelector('.row-price').value = matched.price;
+        tr.querySelector('.row-gst').value = matched.gst;
+        calculateTotals();
+    }
 
         tr.innerHTML = `
             <td>${rowCount}</td>
