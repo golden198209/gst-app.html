@@ -14,6 +14,7 @@
         .btn:hover { background: #2980b9; }
         .btn-danger { background: #e74c3c; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
         .btn-success { background: #2ecc71; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-warning { background: #f39c12; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         
         /* Navigation Tabs Bar */
         .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: #e9ecef; padding: 10px; border-radius: 6px; flex-wrap: wrap; }
@@ -52,14 +53,19 @@
 
     <!-- TAB 1: CREATE INVOICE -->
     <div id="createInvoice" class="tab-content active">
-        <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px;">
+        <!-- Top Bar with Price Mode and Scanner Tools -->
+        <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; background: #eef2f7; padding: 12px 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #cbd5e1;">
             <div>
                 <label><strong>Price Mode:</strong></label>
                 &nbsp;<label><input type="radio" name="priceMode" value="exclusive" checked onchange="calculateTotals()"> Without GST</label>
                 &nbsp;&nbsp;<label><input type="radio" name="priceMode" value="inclusive" onchange="calculateTotals()"> With GST</label>
             </div>
-            <div style="width: 35%;">
-                <input type="text" id="globalBarcodeScan" class="input-field" placeholder="🔍 Scan Barcode or Search Product & hit Enter..." onkeypress="handleGlobalBarcode(event)" style="margin-bottom:0;">
+            <div style="display: flex; gap: 10px; align-items: center; width: 55%;">
+                <input type="text" id="globalBarcodeScan" class="input-field" placeholder="🔍 Scan Barcode or Search Product & hit Enter..." onkeypress="handleGlobalBarcode(event)" style="margin-bottom:0; background: #fff;">
+                <button class="btn-warning" onclick="openCameraScanner()" style="white-space: nowrap;">📷 Scan Camera</button>
+            </div>
+            <div>
+                <span style="font-size: 13px; color: #27ae60; font-weight: bold;">● Local Mode</span>
             </div>
         </div>
 
@@ -192,19 +198,14 @@
         </div>
     </div>
 
-    <!-- TAB 2: INVOICE HISTORY -->
+    <!-- OTHER TABS -->
     <div id="invoiceHistory" class="tab-content">
         <h3>Invoice History & Reports</h3>
-        <div>
-            <p>Total Sales: <strong id="repTotalSales">₹0.00</strong> | Received: <strong id="repTotalReceived">₹0.00</strong> | Pending: <strong id="repTotalPending" style="color: red;">₹0.00</strong></p>
-        </div>
         <table>
             <thead><tr><th>Firm</th><th>Inv #</th><th>Date</th><th>Customer</th><th>Status</th><th>Total</th><th>Action</th></tr></thead>
             <tbody id="historyTableBody"></tbody>
         </table>
     </div>
-
-    <!-- TAB 3: PENDING PAYMENTS -->
     <div id="pendingPayments" class="tab-content">
         <h3>Pending Payments (Udhaar / Customer Ledger)</h3>
         <table>
@@ -212,8 +213,6 @@
             <tbody id="ledgerTableBody"></tbody>
         </table>
     </div>
-
-    <!-- TAB 4: REPORTS & GSTR-1 -->
     <div id="reportsTab" class="tab-content">
         <h3>GSTR-1 HSN Summary Report</h3>
         <table>
@@ -221,8 +220,6 @@
             <tbody id="gstr1TableBody"></tbody>
         </table>
     </div>
-
-    <!-- TAB 5: MANAGE FIRMS -->
     <div id="manageFirms" class="tab-content">
         <h3>Manage Firms / Companies</h3>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
@@ -238,8 +235,6 @@
             <tbody id="companyTableBody"></tbody>
         </table>
     </div>
-
-    <!-- TAB 6: CUSTOMERS & LEDGER -->
     <div id="customersLedger" class="tab-content">
         <h3>Manage Customers</h3>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
@@ -254,8 +249,6 @@
             <tbody id="customerTableBody"></tbody>
         </table>
     </div>
-
-    <!-- TAB 7: STOCK & BARCODE -->
     <div id="stockBarcode" class="tab-content">
         <h3>Manage Inventory & Stock</h3>
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
@@ -280,12 +273,15 @@
     </div>
 </div>
 
-<div id="thermalReceiptModal" class="no-print" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-    <div style="background:white; padding:20px; border-radius:8px; width:350px;">
-        <h3>POS Thermal Receipt</h3>
-        <pre id="thermalContent" style="background:#eee; padding:10px; font-family:monospace; font-size:12px; white-space:pre-wrap;"></pre>
-        <button class="btn" onclick="window.print()">Print Thermal</button>
-        <button class="btn btn-danger" onclick="document.getElementById('thermalReceiptModal').style.display='none'">Close</button>
+<!-- Camera Scanner Modal -->
+<div id="cameraScannerModal" class="no-print" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index: 1000;">
+    <div style="background:white; padding:20px; border-radius:8px; width:400px; text-align: center;">
+        <h3>Scan Barcode via Camera</h3>
+        <p style="font-size: 13px; color: #666;">Aap apna physical barcode scanner gun bhi direct use kar sakte hain (woh upar wale search box mein automatically read kar lega).</p>
+        <div style="margin: 15px 0;">
+            <input type="text" id="cameraInputSim" class="input-field" placeholder="Click here and scan barcode using device..." onkeypress="handleCameraInput(event)">
+        </div>
+        <button class="btn btn-danger" onclick="closeCameraScanner()">Close Scanner</button>
     </div>
 </div>
 
@@ -385,14 +381,37 @@
         if(e.key === 'Enter') {
             e.preventDefault();
             let code = document.getElementById('globalBarcodeScan').value.trim();
-            if(!code) return;
-            let prod = inventory.find(p => p.barcode === code || p.name.toLowerCase().includes(code.toLowerCase()));
-            if(prod) {
-                addItemRowWithProduct(prod);
-                document.getElementById('globalBarcodeScan').value = '';
-            } else {
-                alert("Product not found with barcode / search term!");
-            }
+            processScannedCode(code);
+            document.getElementById('globalBarcodeScan').value = '';
+        }
+    }
+
+    function openCameraScanner() {
+        document.getElementById('cameraScannerModal').style.display = 'flex';
+        document.getElementById('cameraInputSim').focus();
+    }
+
+    function closeCameraScanner() {
+        document.getElementById('cameraScannerModal').style.display = 'none';
+    }
+
+    function handleCameraInput(e) {
+        if(e.key === 'Enter') {
+            e.preventDefault();
+            let code = document.getElementById('cameraInputSim').value.trim();
+            processScannedCode(code);
+            document.getElementById('cameraInputSim').value = '';
+            closeCameraScanner();
+        }
+    }
+
+    function processScannedCode(code) {
+        if(!code) return;
+        let prod = inventory.find(p => p.barcode === code || p.name.toLowerCase().includes(code.toLowerCase()));
+        if(prod) {
+            addItemRowWithProduct(prod);
+        } else {
+            alert("Product not found with barcode / search term: " + code);
         }
     }
 
@@ -607,64 +626,6 @@
         setNextInvoiceNumber();
     }
 
-    function openThermalReceipt() {
-        let firmIdx = document.getElementById('activeFirmSelect').value;
-        let firm = companies[firmIdx] || {};
-        let custDetails = document.getElementById('manualCustDetails').value;
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        let invNo = document.getElementById('invNumber').value;
-        let date = document.getElementById('invDate').value;
-
-        let receiptText = `================================\n`;
-        receiptText += `      ${firm.name || 'POS RECEIPT'}\n`;
-        receiptText += `  ${firm.address || ''}\n`;
-        receiptText += `  Ph: ${firm.phone || ''} | GSTIN: ${firm.gstin || ''}\n`;
-        receiptText += `================================\n`;
-        receiptText += `Inv No: ${invNo} | Date: ${date}\n`;
-        receiptText += `--------------------------------\n`;
-        receiptText += `Bill To:\n${custDetails}\n`;
-        receiptText += `--------------------------------\n`;
-        receiptText += `Item           Qty   Price   Total\n`;
-        receiptText += `--------------------------------\n`;
-
-        document.querySelectorAll('#itemRows tr').forEach(tr => {
-            let nameSelect = tr.querySelector('.row-name');
-            let itemName = nameSelect ? nameSelect.value : '';
-            let name = itemName.substring(0, 14).padEnd(14, ' ');
-            let qty = (tr.querySelector('.row-qty').value || '').padStart(4, ' ');
-            let price = (tr.querySelector('.row-price').value || '').padStart(7, ' ');
-            let tot = (tr.querySelector('.row-total').innerText || '').padStart(7, ' ');
-            receiptText += `${name} ${qty} ${price} ${tot}\n`;
-        });
-
-        receiptText += `--------------------------------\n`;
-        receiptText += `GRAND TOTAL: Rs. ${grandTotal}\n`;
-        receiptText += `================================\n`;
-        receiptText += `       Thank You For Visit!      \n`;
-        receiptText += `================================\n`;
-
-        document.getElementById('thermalContent').innerText = receiptText;
-        document.getElementById('thermalReceiptModal').style.display = 'flex';
-    }
-
-    function downloadOrSharePDF() { window.print(); }
-
-    function shareOnWhatsApp() {
-        let custDetails = document.getElementById('manualCustDetails').value;
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        let invNo = document.getElementById('invNumber').value;
-        let msg = encodeURIComponent(`Hello, here is your Tax Invoice #${invNo} amounting to Rs. ${grandTotal}.\n\nCustomer Details:\n${custDetails}\n\nThank you for doing business with us!`);
-        window.open(`https://wa.me/?text=${msg}`, '_blank');
-    }
-
-    function shareViaEmail() {
-        let invNo = document.getElementById('invNumber').value;
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        let subject = encodeURIComponent(`Tax Invoice #${invNo}`);
-        let body = encodeURIComponent(`Please find your invoice total amounting to Rs. ${grandTotal}.`);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    }
-
     function renderCompanyTable() {
         let tbody = document.getElementById('companyTableBody');
         tbody.innerHTML = '';
@@ -804,10 +765,7 @@
     }
 
     function updateReports() {
-        let totalSales = 0;
-        let totalReceived = 0;
-        let totalPending = 0;
-
+        let totalSales = 0, totalReceived = 0, totalPending = 0;
         invoices.forEach(inv => {
             totalSales += inv.grandTotal;
             totalReceived += inv.received;
