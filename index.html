@@ -30,6 +30,10 @@
         </div>
     </div>
 
+    <!-- Global Inventory Datalist for Auto-Suggest -->
+    <datalist id="inventoryList">
+    </datalist>
+
     <!-- Scanner Modal -->
     <div id="scannerModal">
         <div style="background: white; padding: 20px; border-radius: 5px; text-align: center;">
@@ -124,6 +128,7 @@
             invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
             populateFirmDropdowns();
             populateCustomerDropdown();
+            updateInventoryDatalist();
             renderInventoryTable();
             renderCompanyTable();
             renderCustomerTable();
@@ -170,6 +175,7 @@
                 if(data.invoices) invoices = data.invoices;
                 populateFirmDropdowns();
                 populateCustomerDropdown();
+                updateInventoryDatalist();
                 renderInventoryTable();
                 onFirmChange();
             }
@@ -187,6 +193,19 @@
         db.collection('pos_data').doc('store').set({
             companies, customers, inventory, invoices
         }).catch(e => {});
+    }
+
+    // Update Datalist options for auto-suggest
+    function updateInventoryDatalist() {
+        let datalist = document.getElementById('inventoryList');
+        if(!datalist) return;
+        datalist.innerHTML = '';
+        inventory.forEach(prod => {
+            let opt = document.createElement('option');
+            opt.value = prod.name;
+            opt.innerText = `Stock: ${prod.stock} | Price: ₹${prod.price}`;
+            datalist.appendChild(opt);
+        });
     }
 
     // Camera Barcode Scanner Integration with Duplicate Prevention (Debounce)
@@ -320,7 +339,7 @@
         let tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${rowCount}</td>
-            <td class="left"><input type="text" class="input-field row-name" value="${prod.name}" style="margin-bottom:0;"></td>
+            <td class="left"><input type="text" class="input-field row-name" value="${prod.name}" list="inventoryList" onchange="onRowProductSelected(this)" style="margin-bottom:0;"></td>
             <td><input type="text" class="input-field row-barcode" value="${prod.barcode || ''}" style="margin-bottom:0;"></td>
             <td><input type="text" class="input-field row-hsn" value="${prod.hsn || ''}" style="margin-bottom:0;"></td>
             <td><input type="number" class="input-field row-qty" value="1" min="1" oninput="calculateTotals()" style="margin-bottom:0;"></td>
@@ -341,6 +360,21 @@
         `;
         tbody.appendChild(tr);
         calculateTotals();
+    }
+
+    // Auto-fill row details when product is selected from the dropdown list
+    function onRowProductSelected(inputElem) {
+        let val = inputElem.value.trim();
+        let prod = inventory.find(p => p.name.toLowerCase() === val.toLowerCase());
+        if(prod) {
+            let tr = inputElem.closest('tr');
+            tr.querySelector('.row-barcode').value = prod.barcode || '';
+            tr.querySelector('.row-hsn').value = prod.hsn || '';
+            tr.querySelector('.row-price').value = prod.price || 0;
+            let gstSelect = tr.querySelector('.row-gst');
+            if(gstSelect) gstSelect.value = prod.gst || 18;
+            calculateTotals();
+        }
     }
 
     function addItemRow() {
@@ -635,6 +669,7 @@
             tr.innerHTML = `<td>${prod.name}</td><td>${prod.barcode}</td><td>${prod.hsn}</td><td>${prod.price}</td><td>${prod.gst}%</td><td>${prod.stock}</td><td><button class="btn-danger" onclick="deleteProduct(${idx})">Delete</button></td>`;
             tbody.appendChild(tr);
         });
+        updateInventoryDatalist();
     }
 
     function saveProduct() {
