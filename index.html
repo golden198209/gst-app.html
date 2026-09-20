@@ -3,199 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS System</title>
-    <!-- QuaggaJS for Barcode Scanner -->
+    <title>POS System - Golden Star & Clapsmile</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; color: #333; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
         .input-field { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn-danger { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
-        .btn-success { background: #28a745; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .btn { background: #007bff; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 4px; }
+        .btn-success { background: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
         th { background-color: #f2f2f2; }
         .right { text-align: right; }
         .left { text-align: left; }
-        .low-stock { background-color: #ffcccc; }
+        .section-box { background: #fafafa; border: 1px solid #e1e1e1; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
         #scannerModal, #thermalReceiptModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
         #interactive { width: 100%; max-width: 400px; height: 300px; }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; padding: 0; }
+        }
     </style>
 </head>
 <body>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>POS & Inventory Management</h2>
+<div class="container">
+    <div class="header-flex">
+        <h2>POS & Billing System</h2>
         <div>
-            <span id="syncStatus" style="font-weight: bold; color: #dc3545;">⚠️ Local Storage</span>
+            <span id="syncStatus" style="font-weight: bold; color: #dc3545;">⚠️ Local Mode</span>
         </div>
     </div>
 
     <!-- Global Inventory Datalist for Auto-Suggest -->
-    <datalist id="inventoryList">
-    </datalist>
+    <datalist id="inventoryList"></datalist>
 
-    <!-- Scanner Modal -->
-    <div id="scannerModal">
-        <div style="background: white; padding: 20px; border-radius: 5px; text-align: center;">
-            <h3>Scan Barcode</h3>
-            <div id="interactive" class="viewport"></div>
-            <br>
-            <button class="btn-danger" onclick="stopCameraScanner()">Close Scanner</button>
+    <!-- Top Controls: Firm & Barcode Search -->
+    <div class="section-box">
+        <div style="display: flex; gap: 15px;">
+            <div style="flex: 1;">
+                <label><strong>Select Active Firm:</strong></label>
+                <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()"></select>
+            </div>
+            <div style="flex: 1;">
+                <label><strong>Scan / Search Product Barcode or Name:</strong></label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="globalBarcodeScan" class="input-field" placeholder="Type item name or scan barcode..." onkeypress="handleGlobalBarcode(event)" style="margin-bottom:0;">
+                    <button class="btn" onclick="startCameraScanner('global')" type="button">📷 Scan</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Thermal Receipt Modal -->
-    <div id="thermalReceiptModal">
-        <div style="background: white; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
-            <h3>Thermal Receipt Preview</h3>
-            <pre id="thermalContent" style="text-align: left; background: #eee; padding: 10px; font-family: monospace; font-size: 12px;"></pre>
-            <button class="btn-success" onclick="window.print()">Print Receipt</button>
-            <button class="btn-danger" onclick="document.getElementById('thermalReceiptModal').style.display='none'">Close</button>
+    <!-- Invoice Details Panel -->
+    <div class="section-box">
+        <h3>Invoice Details</h3>
+        <div style="display: flex; gap: 15px;">
+            <div style="flex: 1;">
+                <label>Invoice Number:</label>
+                <input type="text" id="invNumber" class="input-field">
+            </div>
+            <div style="flex: 1;">
+                <label>Invoice Date:</label>
+                <input type="date" id="invDate" class="input-field">
+            </div>
+            <div style="flex: 1;">
+                <label>Select Customer:</label>
+                <select id="invoiceCustDropdown" class="input-field" onchange="onCustomerSelected()"></select>
+            </div>
+        </div>
+        <div>
+            <label>Customer Billing Details:</label>
+            <textarea id="manualCustDetails" class="input-field" rows="3" placeholder="Customer Name, Address, Phone, GSTIN"></textarea>
+        </div>
+        <div>
+            <label>Price Mode: </label>
+            <label><input type="radio" name="priceMode" value="exclusive" checked onchange="calculateTotals()"> Exclusive of GST</label>
+            &nbsp;&nbsp;
+            <label><input type="radio" name="priceMode" value="inclusive" onchange="calculateTotals()"> Inclusive of GST</label>
         </div>
     </div>
 
-    <!-- Main POS Interface Container (Reference Elements Setup) -->
-    <div>
-        <label>Active Firm:</label>
-        <select id="activeFirmSelect" class="input-field" onchange="onFirmChange()"></select>
-        
-        <div style="display:none;">
-            <span id="lblCompanyName"></span>
-            <span id="lblCompanyDetails"></span>
-            <span id="lblBankDetails"></span>
-            <span id="lblSignCompanyName"></span>
-            <input type="text" id="globalBarcodeScan" onkeypress="handleGlobalBarcode(event)">
-            <input type="text" id="invNumber">
-            <input type="date" id="invDate">
-            <select id="invoiceCustDropdown" onchange="onCustomerSelected()"></select>
-            <textarea id="manualCustDetails"></textarea>
-            <input type="radio" name="priceMode" value="exclusive" checked>
-            <input type="radio" name="priceMode" value="inclusive">
-            <input type="number" id="amtReceived" value="0">
-            <span id="subTotal">0.00</span>
-            <span id="grandTotal">0.00</span>
-            <span id="amountInWords"></span>
-            <span id="balanceAmount">0.00</span>
-            <table id="itemRows"></table>
-            <table id="taxSummaryRows"></table>
+    <!-- Bill Items Table -->
+    <h3>Items List</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 40px;">#</th>
+                <th>Item Name (Type to auto-suggest)</th>
+                <th style="width: 100px;">Barcode</th>
+                <th style="width: 80px;">HSN</th>
+                <th style="width: 60px;">Qty</th>
+                <th style="width: 60px;">Unit</th>
+                <th style="width: 90px;">Price</th>
+                <th style="width: 80px;">GST %</th>
+                <th style="width: 90px;" class="right">GST Amt</th>
+                <th style="width: 100px;" class="right">Total</th>
+                <th style="width: 40px;" class="no-print">Action</th>
+            </tr>
+        </thead>
+        <tbody id="itemRows">
+            <!-- Dynamic Rows will appear here -->
+        </tbody>
+    </table>
+    <button class="btn no-print" onclick="addItemRow()">+ Add Row</button>
+
+    <!-- Summary & Totals -->
+    <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+        <div style="width: 55%;">
+            <h4>Tax Summary (HSN-wise)</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>HSN</th>
+                        <th class="right">Taxable</th>
+                        <th>CGST</th>
+                        <th class="right">Amt</th>
+                        <th>SGST</th>
+                        <th class="right">Amt</th>
+                        <th class="right">Total Tax</th>
+                    </tr>
+                </thead>
+                <tbody id="taxSummaryRows"></tbody>
+            </table>
+            <p><strong>Amount in Words:</strong> <span id="amountInWords">Zero Rupees Only</span></p>
+        </div>
+        <div style="width: 40%; background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+            <p style="display: flex; justify-content: space-between; margin: 5px 0;"><span>Sub Total:</span> <strong>₹<span id="subTotal">0.00</span></strong></p>
+            <p style="display: flex; justify-content: space-between; margin: 5px 0; font-size: 18px; border-top: 1px solid #ccc; padding-top: 5px;"><span>Grand Total:</span> <strong>₹<span id="grandTotal">0.00</span></strong></p>
+            <div style="margin-top: 10px;">
+                <label>Amount Received:</label>
+                <input type="number" id="amtReceived" class="input-field" value="0" oninput="calculateTotals()" style="margin-bottom:5px;">
+            </div>
+            <p style="display: flex; justify-content: space-between; margin: 5px 0;"><span>Balance Due:</span> <strong>₹<span id="balanceAmount" style="color: green;">0.00</span></strong></p>
             
-            <!-- Management Tables & Fields -->
-            <table id="companyTableBody"></table>
-            <input type="text" id="busName">
-            <input type="text" id="busPrefix">
-            <input type="text" id="busAddress">
-            <input type="text" id="busPhone">
-            <input type="text" id="busGstin">
-
-            <table id="customerTableBody"></table>
-            <input type="text" id="newCustName">
-            <input type="text" id="newCustAddress">
-            <input type="text" id="newCustPhone">
-            <input type="text" id="newCustGstin">
-
-            <table id="inventoryTableBody"></table>
-            <input type="text" id="prodName">
-            <input type="text" id="prodBarcode">
-            <input type="text" id="prodHsn">
-            <input type="number" id="prodPrice">
-            <input type="number" id="prodGst">
-            <input type="number" id="prodStock">
-
-            <table id="historyTableBody"></table>
-            <table id="ledgerTableBody"></table>
-            <table id="dayBookTableBody"></table>
-            <table id="gstr1TableBody"></table>
-            <span id="repTotalSales"></span>
-            <span id="repTotalReceived"></span>
-            <span id="repTotalPending"></span>
+            <div style="margin-top: 15px; display: flex; gap: 10px;" class="no-print">
+                <button class="btn-success" style="flex: 1;" onclick="saveAndPrintInvoice()">Save & Print</button>
+                <button class="btn" style="flex: 1; background: #6c757d;" onclick="openThermalReceipt()">Thermal Print</button>
+            </div>
         </div>
     </div>
+
+    <!-- Management Quick Section (Inventory & Customers) -->
+    <div class="section-box no-print" style="margin-top: 30px;">
+        <h3>Quick Inventory Management</h3>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="prodName" class="input-field" placeholder="Product Name" style="margin-bottom:0; flex:2;">
+            <input type="text" id="prodBarcode" class="input-field" placeholder="Barcode" style="margin-bottom:0; flex:1;">
+            <input type="text" id="prodHsn" class="input-field" placeholder="HSN" style="margin-bottom:0; flex:1;">
+            <input type="number" id="prodPrice" class="input-field" placeholder="Price" style="margin-bottom:0; flex:1;">
+            <input type="number" id="prodGst" class="input-field" placeholder="GST %" value="18" style="margin-bottom:0; flex:1;">
+            <input type="number" id="prodStock" class="input-field" placeholder="Stock" value="10" style="margin-bottom:0; flex:1;">
+            <button class="btn-success" onclick="saveProduct()">Add Product</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Barcode</th>
+                    <th>HSN</th>
+                    <th>Price</th>
+                    <th>GST</th>
+                    <th>Stock</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="inventoryTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Scanner Modal -->
+<div id="scannerModal">
+    <div style="background: white; padding: 20px; border-radius: 5px; text-align: center;">
+        <h3>Scan Barcode</h3>
+        <div id="interactive" class="viewport"></div>
+        <br>
+        <button class="btn-danger" onclick="stopCameraScanner()">Close Scanner</button>
+    </div>
+</div>
+
+<!-- Thermal Receipt Modal -->
+<div id="thermalReceiptModal">
+    <div style="background: white; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
+        <h3>Thermal Receipt Preview</h3>
+        <pre id="thermalContent" style="text-align: left; background: #eee; padding: 10px; font-family: monospace; font-size: 12px;"></pre>
+        <button class="btn-success" onclick="window.print()">Print Receipt</button>
+        <button class="btn-danger" onclick="document.getElementById('thermalReceiptModal').style.display='none'">Close</button>
+    </div>
+</div>
 
 <script>
-    let db = null;
-    let useCloud = false;
-    let companies = [];
+    let companies = [
+        { name: "Golden Star Furniture and Interior", prefix: "GS", address: "Furniture Design, Interior Services & Joinery", phone: "", gstin: "" },
+        { name: "Clapsmile", prefix: "CLP", address: "Wooden Games, Toys & Home Decor", phone: "", gstin: "" }
+    ];
     let customers = [];
     let inventory = [];
     let invoices = [];
 
-    // Initialization check for LocalStorage
     function loadLocalData() {
         try {
-            companies = JSON.parse(localStorage.getItem('gs_companies')) || [];
-            customers = JSON.parse(localStorage.getItem('gs_customers')) || [];
-            inventory = JSON.parse(localStorage.getItem('gs_inventory')) || [];
-            invoices = JSON.parse(localStorage.getItem('gs_invoices')) || [];
+            let savedCompanies = JSON.parse(localStorage.getItem('gs_pos_companies_v2'));
+            if (savedCompanies && savedCompanies.length > 0) companies = savedCompanies;
+
+            customers = JSON.parse(localStorage.getItem('gs_pos_customers_v2')) || [];
+            inventory = JSON.parse(localStorage.getItem('gs_pos_inventory_v2')) || [];
+            invoices = JSON.parse(localStorage.getItem('gs_pos_invoices_v2')) || [];
+            
+            // Set today's date
+            document.getElementById('invDate').valueAsDate = new Date();
+            setNextInvoiceNumber();
             populateFirmDropdowns();
             populateCustomerDropdown();
             updateInventoryDatalist();
             renderInventoryTable();
-            renderCompanyTable();
-            renderCustomerTable();
-            renderHistoryTable();
-            renderLedgerTable();
-            updateReports();
-        } catch(e) {}
+            addItemRow();
+        } catch(e) { console.error(e); }
     }
     loadLocalData();
 
-    function triggerFirebaseInit(jsonText) {
-        try {
-            let config = JSON.parse(jsonText);
-            initFirebase(config);
-            alert("Firebase successfully connected!");
-            toggleCloudConfig();
-        } catch(e) {
-            alert("Invalid JSON format!");
-        }
+    function saveData() {
+        localStorage.setItem('gs_pos_companies_v2', JSON.stringify(companies));
+        localStorage.setItem('gs_pos_customers_v2', JSON.stringify(customers));
+        localStorage.setItem('gs_pos_inventory_v2', JSON.stringify(inventory));
+        localStorage.setItem('gs_pos_invoices_v2', JSON.stringify(invoices));
     }
 
-    function initFirebase(config) {
-        try {
-            if(!firebase.apps.length) {
-                firebase.initializeApp(config);
-            }
-            db = firebase.firestore();
-            useCloud = true;
-            document.getElementById('syncStatus').innerText = "☁️ Cloud Synced";
-            document.getElementById('syncStatus').style.color = "#007bff";
-            fetchCloudData();
-        } catch(e) { useCloud = false; }
-    }
-
-    async function fetchCloudData() {
-        if(!useCloud || !db) return;
-        try {
-            let snap = await db.collection('pos_data').doc('store').get();
-            if(snap.exists) {
-                let data = snap.data();
-                if(data.companies) companies = data.companies;
-                if(data.customers) customers = data.customers;
-                if(data.inventory) inventory = data.inventory;
-                if(data.invoices) invoices = data.invoices;
-                populateFirmDropdowns();
-                populateCustomerDropdown();
-                updateInventoryDatalist();
-                renderInventoryTable();
-                onFirmChange();
-            }
-        } catch(e) {}
-    }
-
-    function syncToCloud() {
-        if(!useCloud || !db) {
-            localStorage.setItem('gs_companies', JSON.stringify(companies));
-            localStorage.setItem('gs_customers', JSON.stringify(customers));
-            localStorage.setItem('gs_inventory', JSON.stringify(inventory));
-            localStorage.setItem('gs_invoices', JSON.stringify(invoices));
-            return;
-        }
-        db.collection('pos_data').doc('store').set({
-            companies, customers, inventory, invoices
-        }).catch(e => {});
-    }
-
-    // Update Datalist options for auto-suggest
     function updateInventoryDatalist() {
         let datalist = document.getElementById('inventoryList');
         if(!datalist) return;
@@ -208,74 +245,6 @@
         });
     }
 
-    // Camera Barcode Scanner Integration with Duplicate Prevention (Debounce)
-    let activeScannerTarget = 'global';
-    let lastScannedCode = '';
-    let lastScanTime = 0;
-
-    function startCameraScanner(target = 'global') {
-        activeScannerTarget = target;
-        document.getElementById('scannerModal').style.display = 'flex';
-        
-        Quagga.init({
-            inputStream: {
-                name: "Live",
-                type: "LiveStream",
-                target: document.querySelector('#interactive'),
-                constraints: { facingMode: "environment" },
-            },
-            decoder: {
-                readers: ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader", "upc_e_reader"]
-            }
-        }, function(err) {
-            if (err) {
-                alert("Camera start nahi ho saka!");
-                stopCameraScanner();
-                return;
-            }
-            Quagga.start();
-        });
-
-        Quagga.onDetected(onBarcodeScannedFromCamera);
-    }
-
-    function startCameraScannerForInventory() {
-        startCameraScanner('inventory');
-    }
-
-    function stopCameraScanner() {
-        try { Quagga.stop(); } catch(e) {}
-        document.getElementById('scannerModal').style.display = 'none';
-    }
-
-    function onBarcodeScannedFromCamera(result) {
-        let code = result.codeResult.code;
-        let currentTime = new Date().getTime();
-
-        if (code === lastScannedCode && (currentTime - lastScanTime < 2000)) {
-            return; 
-        }
-        
-        lastScannedCode = code;
-        lastScanTime = currentTime;
-        stopCameraScanner();
-
-        if(activeScannerTarget === 'global') {
-            document.getElementById('globalBarcodeScan').value = code;
-            handleGlobalBarcode({ key: 'Enter', preventDefault: () => {} });
-        } else if(activeScannerTarget === 'inventory') {
-            document.getElementById('prodBarcode').value = code;
-        }
-    }
-
-    function setNextInvoiceNumber() {
-        if(invoices.length > 0) {
-            let lastInv = invoices[invoices.length - 1];
-            let nextNum = (parseInt(lastInv.invNumber) || invoices.length) + 1;
-            document.getElementById('invNumber').value = nextNum;
-        }
-    }
-
     function populateFirmDropdowns() {
         let sel = document.getElementById('activeFirmSelect');
         sel.innerHTML = '';
@@ -285,6 +254,7 @@
             opt.innerText = c.name;
             sel.appendChild(opt);
         });
+        onFirmChange();
     }
 
     function populateCustomerDropdown() {
@@ -302,10 +272,8 @@
         let idx = document.getElementById('activeFirmSelect').value;
         if(companies[idx]) {
             let firm = companies[idx];
-            document.getElementById('lblCompanyName').innerText = firm.name;
-            document.getElementById('lblCompanyDetails').innerHTML = `Address: ${firm.address}<br>Phone: ${firm.phone}<br>GSTIN: ${firm.gstin}`;
-            document.getElementById('lblBankDetails').innerHTML = `Bank Name: ${firm.bankName || 'N/A'}<br>A/C No: ${firm.accNo || 'N/A'}<br>IFSC: ${firm.ifsc || 'N/A'}`;
-            document.getElementById('lblSignCompanyName').innerText = `For ${firm.name} :`;
+            let details = `${firm.name}\nAddress: ${firm.address || 'N/A'}\nPhone: ${firm.phone || 'N/A'}\nGSTIN: ${firm.gstin || 'Unregistered'}`;
+            // If manual customer details is empty, we can keep it or show firm context
         }
     }
 
@@ -313,9 +281,14 @@
         let idx = document.getElementById('invoiceCustDropdown').value;
         if(idx !== "") {
             let cust = customers[idx];
-            let text = `${cust.name}\n${cust.address}\nPhone: ${cust.phone || 'N/A'}\nGSTIN: ${cust.gstin || 'Unregistered'}\nState: ${cust.state || '01-Jammu & Kashmir'}`;
+            let text = `${cust.name}\n${cust.address || ''}\nPhone: ${cust.phone || 'N/A'}\nGSTIN: ${cust.gstin || 'Unregistered'}`;
             document.getElementById('manualCustDetails').value = text;
         }
+    }
+
+    function setNextInvoiceNumber() {
+        let nextNum = invoices.length + 1001;
+        document.getElementById('invNumber').value = nextNum;
     }
 
     function handleGlobalBarcode(e) {
@@ -328,7 +301,7 @@
                 addItemRowWithProduct(prod);
                 document.getElementById('globalBarcodeScan').value = '';
             } else {
-                alert("Product not found with barcode / search term!");
+                alert("Product not found! Add it in Inventory section first.");
             }
         }
     }
@@ -339,12 +312,12 @@
         let tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${rowCount}</td>
-            <td class="left"><input type="text" class="input-field row-name" value="${prod.name}" list="inventoryList" onchange="onRowProductSelected(this)" style="margin-bottom:0;"></td>
+            <td><input type="text" class="input-field row-name" value="${prod.name}" list="inventoryList" onchange="onRowProductSelected(this)" style="margin-bottom:0;"></td>
             <td><input type="text" class="input-field row-barcode" value="${prod.barcode || ''}" style="margin-bottom:0;"></td>
             <td><input type="text" class="input-field row-hsn" value="${prod.hsn || ''}" style="margin-bottom:0;"></td>
             <td><input type="number" class="input-field row-qty" value="1" min="1" oninput="calculateTotals()" style="margin-bottom:0;"></td>
             <td><input type="text" class="input-field row-unit" value="Nos" style="margin-bottom:0;"></td>
-            <td><input type="number" class="input-field row-price" value="${prod.price}" step="0.01" oninput="calculateTotals()" style="margin-bottom:0;"></td>
+            <td><input type="number" class="input-field row-price" value="${prod.price || 0}" step="0.01" oninput="calculateTotals()" style="margin-bottom:0;"></td>
             <td>
                 <select class="input-field row-gst" onchange="calculateTotals()" style="margin-bottom:0;">
                     <option value="18" ${prod.gst==18?'selected':''}>18%</option>
@@ -362,7 +335,6 @@
         calculateTotals();
     }
 
-    // Auto-fill row details when product is selected from the dropdown list
     function onRowProductSelected(inputElem) {
         let val = inputElem.value.trim();
         let prod = inventory.find(p => p.name.toLowerCase() === val.toLowerCase());
@@ -433,7 +405,6 @@
         balElem.innerText = balance.toFixed(2);
         balElem.style.color = balance > 0 ? '#b30000' : 'green';
 
-        // Render Tax Summary Rows
         let taxBody = document.getElementById('taxSummaryRows');
         taxBody.innerHTML = '';
         for(let hsn in taxMap) {
@@ -456,34 +427,55 @@
         if(amount === 0) return "Zero Rupees Only";
         let words = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
         let tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
-
         function getWord(n) {
             if(n < 20) return words[n];
             return tens[Math.floor(n/10)] + (n%10 ? ' ' + words[n%10] : '');
         }
-
         let num = Math.floor(amount);
         let str = '';
-        if(num >= 10000000) {
-            str += getWord(Math.floor(num / 10000000)) + ' Crore ';
-            num %= 10000000;
-        }
-        if(num >= 100000) {
-            str += getWord(Math.floor(num / 100000)) + ' Lakh ';
-            num %= 100000;
-        }
-        if(num >= 1000) {
-            str += getWord(Math.floor(num / 1000)) + ' Thousand ';
-            num %= 1000;
-        }
-        if(num >= 100) {
-            str += getWord(Math.floor(num / 100)) + ' Hundred ';
-            num %= 100;
-        }
-        if(num > 0) {
-            str += getWord(num) + ' ';
-        }
+        if(num >= 10000000) { str += getWord(Math.floor(num / 10000000)) + ' Crore '; num %= 10000000; }
+        if(num >= 100000) { str += getWord(Math.floor(num / 100000)) + ' Lakh '; num %= 100000; }
+        if(num >= 1000) { str += getWord(Math.floor(num / 1000)) + ' Thousand '; num %= 1000; }
+        if(num >= 100) { str += getWord(Math.floor(num / 100)) + ' Hundred '; num %= 100; }
+        if(num > 0) { str += getWord(num) + ' '; }
         return str.trim() + ' Rupees Only';
+    }
+
+    function saveProduct() {
+        let name = document.getElementById('prodName').value.trim();
+        if(!name) { alert("Enter Product Name"); return; }
+        inventory.push({
+            name: name,
+            barcode: document.getElementById('prodBarcode').value.trim(),
+            hsn: document.getElementById('prodHsn').value.trim(),
+            price: parseFloat(document.getElementById('prodPrice').value) || 0,
+            gst: parseFloat(document.getElementById('prodGst').value) || 18,
+            stock: parseInt(document.getElementById('prodStock').value) || 0
+        });
+        saveData();
+        renderInventoryTable();
+        updateInventoryDatalist();
+        document.getElementById('prodName').value = '';
+        document.getElementById('prodBarcode').value = '';
+        document.getElementById('prodPrice').value = '';
+        alert("Product saved successfully!");
+    }
+
+    function renderInventoryTable() {
+        let tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+        inventory.forEach((prod, idx) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${prod.name}</td><td>${prod.barcode}</td><td>${prod.hsn}</td><td>${prod.price}</td><td>${prod.gst}%</td><td>${prod.stock}</td><td><button class="btn-danger" onclick="deleteProduct(${idx})">Delete</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function deleteProduct(idx) {
+        inventory.splice(idx, 1);
+        saveData();
+        renderInventoryTable();
+        updateInventoryDatalist();
     }
 
     function saveAndPrintInvoice() {
@@ -491,12 +483,8 @@
         let firmIdx = document.getElementById('activeFirmSelect').value;
         let firmName = companies[firmIdx] ? companies[firmIdx].name : "Firm";
         let custDetails = document.getElementById('manualCustDetails').value;
-        let custName = custDetails.split('\n')[0] || "Cash Customer";
         let grandTotal = parseFloat(document.getElementById('grandTotal').innerText) || 0;
-        let received = parseFloat(document.getElementById('amtReceived').value) || 0;
-        let balance = parseFloat(document.getElementById('balanceAmount').innerText) || 0;
-        let date = document.getElementById('invDate').value;
-
+        
         let items = [];
         document.querySelectorAll('#itemRows tr').forEach(tr => {
             items.push({
@@ -507,32 +495,9 @@
             });
         });
 
-        let invoiceRecord = {
-            firm: firmName,
-            invNumber: invNo,
-            date: date,
-            customer: custName,
-            custDetails: custDetails,
-            grandTotal: grandTotal,
-            received: received,
-            balance: balance,
-            items: items,
-            status: balance <= 0 ? 'Paid' : 'Pending'
-        };
-
-        invoices.push(invoiceRecord);
-        syncToCloud();
+        invoices.push({ firm: firmName, invNumber: invNo, customer: custDetails, grandTotal, items });
+        saveData();
         window.print();
-        setNextInvoiceNumber();
-        resetInvoiceForm();
-    }
-
-    function resetInvoiceForm() {
-        document.getElementById('itemRows').innerHTML = '';
-        addItemRow();
-        document.getElementById('amtReceived').value = 0;
-        calculateTotals();
-        setNextInvoiceNumber();
     }
 
     function openThermalReceipt() {
@@ -541,14 +506,12 @@
         let custDetails = document.getElementById('manualCustDetails').value;
         let grandTotal = document.getElementById('grandTotal').innerText;
         let invNo = document.getElementById('invNumber').value;
-        let date = document.getElementById('invDate').value;
 
         let receiptText = `================================\n`;
         receiptText += `      ${firm.name || 'POS RECEIPT'}\n`;
         receiptText += `  ${firm.address || ''}\n`;
-        receiptText += `  Ph: ${firm.phone || ''} | GSTIN: ${firm.gstin || ''}\n`;
         receiptText += `================================\n`;
-        receiptText += `Inv No: ${invNo} | Date: ${date}\n`;
+        receiptText += `Inv No: ${invNo}\n`;
         receiptText += `--------------------------------\n`;
         receiptText += `Bill To:\n${custDetails}\n`;
         receiptText += `--------------------------------\n`;
@@ -573,200 +536,25 @@
         document.getElementById('thermalReceiptModal').style.display = 'flex';
     }
 
-    function downloadOrSharePDF() {
-        window.print();
-    }
-
-    function shareOnWhatsApp() {
-        let custDetails = document.getElementById('manualCustDetails').value;
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        let invNo = document.getElementById('invNumber').value;
-        let msg = encodeURIComponent(`Hello, here is your Tax Invoice #${invNo} amounting to Rs. ${grandTotal}.\n\nCustomer Details:\n${custDetails}\n\nThank you for doing business with us!`);
-        window.open(`https://wa.me/?text=${msg}`, '_blank');
-    }
-
-    function shareViaEmail() {
-        let invNo = document.getElementById('invNumber').value;
-        let grandTotal = document.getElementById('grandTotal').innerText;
-        let subject = encodeURIComponent(`Tax Invoice #${invNo}`);
-        let body = encodeURIComponent(`Please find your invoice total amounting to Rs. ${grandTotal}.`);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    }
-
-    // Management Modules & Tables Render Functions
-    function renderCompanyTable() {
-        let tbody = document.getElementById('companyTableBody');
-        tbody.innerHTML = '';
-        companies.forEach((c, idx) => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${c.name}</td><td>${c.gstin}</td><td><button class="btn-danger" onclick="deleteCompany(${idx})">Delete</button></td>`;
-            tbody.appendChild(tr);
+    let activeScannerTarget = 'global';
+    function startCameraScanner(target) {
+        activeScannerTarget = target;
+        document.getElementById('scannerModal').style.display = 'flex';
+        Quagga.init({
+            inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#interactive'), constraints: { facingMode: "environment" } },
+            decoder: { readers: ["ean_reader", "code_128_reader", "upc_reader"] }
+        }, function(err) {
+            if (!err) Quagga.start();
+        });
+        Quagga.onDetected(res => {
+            stopCameraScanner();
+            document.getElementById('globalBarcodeScan').value = res.codeResult.code;
+            handleGlobalBarcode({ key: 'Enter', preventDefault: () => {} });
         });
     }
-
-    function saveBusinessProfile() {
-        let name = document.getElementById('busName').value.trim();
-        if(!name) { alert("Enter Firm Name"); return; }
-        companies.push({
-            name: name,
-            prefix: document.getElementById('busPrefix').value.trim(),
-            address: document.getElementById('busAddress').value.trim(),
-            phone: document.getElementById('busPhone').value.trim(),
-            gstin: document.getElementById('busGstin').value.trim()
-        });
-        syncToCloud();
-        renderCompanyTable();
-        populateFirmDropdowns();
-        alert("Firm saved successfully!");
-    }
-
-    function deleteCompany(idx) {
-        companies.splice(idx, 1);
-        syncToCloud();
-        renderCompanyTable();
-        populateFirmDropdowns();
-    }
-
-    function renderCustomerTable() {
-        let tbody = document.getElementById('customerTableBody');
-        tbody.innerHTML = '';
-        customers.forEach((cust, idx) => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${cust.name}</td><td>${cust.phone}</td><td>${cust.gstin}<br>${cust.address}</td><td>0.00</td><td><button class="btn-danger" onclick="deleteCustomer(${idx})">Delete</button></td>`;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function saveCustomer() {
-        let name = document.getElementById('newCustName').value.trim();
-        if(!name) { alert("Enter Customer Name"); return; }
-        customers.push({
-            name: name,
-            address: document.getElementById('newCustAddress').value.trim(),
-            phone: document.getElementById('newCustPhone').value.trim(),
-            gstin: document.getElementById('newCustGstin').value.trim(),
-            state: "01-Jammu & Kashmir"
-        });
-        syncToCloud();
-        renderCustomerTable();
-        populateCustomerDropdown();
-        alert("Customer saved successfully!");
-    }
-
-    function deleteCustomer(idx) {
-        customers.splice(idx, 1);
-        syncToCloud();
-        renderCustomerTable();
-        populateCustomerDropdown();
-    }
-
-    function renderInventoryTable() {
-        let tbody = document.getElementById('inventoryTableBody');
-        tbody.innerHTML = '';
-        inventory.forEach((prod, idx) => {
-            let tr = document.createElement('tr');
-            if(prod.stock <= 2) tr.classList.add('low-stock');
-            tr.innerHTML = `<td>${prod.name}</td><td>${prod.barcode}</td><td>${prod.hsn}</td><td>${prod.price}</td><td>${prod.gst}%</td><td>${prod.stock}</td><td><button class="btn-danger" onclick="deleteProduct(${idx})">Delete</button></td>`;
-            tbody.appendChild(tr);
-        });
-        updateInventoryDatalist();
-    }
-
-    function saveProduct() {
-        let name = document.getElementById('prodName').value.trim();
-        if(!name) { alert("Enter Product Name"); return; }
-        inventory.push({
-            name: name,
-            barcode: document.getElementById('prodBarcode').value.trim(),
-            hsn: document.getElementById('prodHsn').value.trim(),
-            price: parseFloat(document.getElementById('prodPrice').value) || 0,
-            gst: parseFloat(document.getElementById('prodGst').value) || 18,
-            stock: parseInt(document.getElementById('prodStock').value) || 0
-        });
-        syncToCloud();
-        renderInventoryTable();
-        alert("Product saved successfully!");
-    }
-
-    function deleteProduct(idx) {
-        inventory.splice(idx, 1);
-        syncToCloud();
-        renderInventoryTable();
-    }
-
-    function renderHistoryTable() {
-        let tbody = document.getElementById('historyTableBody');
-        tbody.innerHTML = '';
-        invoices.forEach((inv, idx) => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${inv.firm}</td><td>${inv.invNumber}</td><td>${inv.date}</td><td>${inv.customer}</td><td>${inv.status}</td><td>${inv.grandTotal.toFixed(2)}</td><td><button class="btn-danger" onclick="deleteInvoice(${idx})">Delete</button></td>`;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function deleteInvoice(idx) {
-        invoices.splice(idx, 1);
-        syncToCloud();
-        renderHistoryTable();
-        updateReports();
-    }
-
-    function renderLedgerTable() {
-        let tbody = document.getElementById('ledgerTableBody');
-        tbody.innerHTML = '';
-        invoices.filter(i => i.balance > 0).forEach((inv, idx) => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${inv.customer}<br><small>${inv.custDetails}</small></td><td>${inv.invNumber}</td><td style="color:red; font-weight:bold;">${inv.balance.toFixed(2)}</td><td><button class="btn-success" onclick="markInvoicePaid('${inv.invNumber}')">Mark Paid</button></td>`;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function markInvoicePaid(invNo) {
-        let inv = invoices.find(i => i.invNumber === invNo);
-        if(inv) {
-            inv.received = inv.grandTotal;
-            inv.balance = 0;
-            inv.status = 'Paid';
-            syncToCloud();
-            renderLedgerTable();
-            updateReports();
-        }
-    }
-
-    function updateReports() {
-        let totalSales = 0;
-        let totalReceived = 0;
-        let totalPending = 0;
-        let hsnSummary = {};
-        let dayBookBody = document.getElementById('dayBookTableBody');
-        dayBookBody.innerHTML = '';
-
-        invoices.forEach(inv => {
-            totalSales += inv.grandTotal;
-            totalReceived += inv.received;
-            totalPending += inv.balance;
-
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${inv.date}</td><td>${inv.invNumber}</td><td>${inv.customer}</td><td>${inv.grandTotal.toFixed(2)}</td><td>${inv.status}</td>`;
-            dayBookBody.appendChild(tr);
-        });
-
-        document.getElementById('repTotalSales').innerText = `₹${totalSales.toFixed(2)}`;
-        document.getElementById('repTotalReceived').innerText = `₹${totalReceived.toFixed(2)}`;
-        document.getElementById('repTotalPending').innerText = `₹${totalPending.toFixed(2)}`;
-
-        // Aggregate GSTR-1 HSN Summary
-        let gstrBody = document.getElementById('gstr1TableBody');
-        gstrBody.innerHTML = '';
-        let dummyTaxable = totalSales / 1.18;
-        let dummyCgst = (totalSales - dummyTaxable) / 2;
-        let dummySgst = dummyCgst;
-        
-        if(invoices.length > 0) {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>9403</td><td>${dummyTaxable.toFixed(2)}</td><td>${dummyCgst.toFixed(2)}</td><td>${dummySgst.toFixed(2)}</td><td>${(dummyCgst+dummySgst).toFixed(2)}</td>`;
-            gstrBody.appendChild(tr);
-        }
+    function stopCameraScanner() {
+        try { Quagga.stop(); } catch(e){}
+        document.getElementById('scannerModal').style.display = 'none';
     }
 </script>
 </body>
