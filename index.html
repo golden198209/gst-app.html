@@ -362,17 +362,7 @@
             let prod = inventory.find(p => p.barcode === code || p.name.toLowerCase().includes(code.toLowerCase()));
             if(prod) {
                 addItemRowWithProduct(prod);
-                function onItemDropdownSelect(selectElem) {
-        let selectedName = selectElem.value;
-        let matched = inventory.find(i => i.name === selectedName);
-        if(!matched) return;
-
-        let tr = selectElem.closest('tr');
-        tr.querySelector('.row-barcode').value = matched.barcode || '';
-        tr.querySelector('.row-hsn').value = matched.hsn || '';
-        tr.querySelector('.row-price').value = matched.price;
-        tr.querySelector('.row-gst').value = matched.gst;
-        calculateTotals();
+              
     }
                 document.getElementById('globalBarcodeScan').value = '';
             } else {
