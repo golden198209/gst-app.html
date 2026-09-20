@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POS & Billing System</title>
     <style>
-        /* Base styles */
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f7f6; color: #333; }
         .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1, h2, h3 { color: #2c3e50; }
@@ -35,7 +34,6 @@
     <div class="no-print">
         <h2>POS & Invoice Management System</h2>
         
-        <!-- Firm Selector & Global Barcode -->
         <div style="display: flex; gap: 15px; margin-bottom: 15px;">
             <div style="flex: 1;">
                 <label><strong>Select Firm / Company:</strong></label>
@@ -48,7 +46,6 @@
         </div>
     </div>
 
-    <!-- Invoice Header Preview / Print Area -->
     <div id="printableArea">
         <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px;">
             <div>
@@ -62,7 +59,6 @@
             </div>
         </div>
 
-        <!-- Customer Selection & Details -->
         <div style="display: flex; justify-content: space-between; margin-bottom: 15px;" class="no-print">
             <div style="width: 48%;">
                 <label>Select Saved Customer:</label>
@@ -83,12 +79,11 @@
             <textarea id="manualCustDetails" class="input-field" rows="3" placeholder="Customer Name, Address, GSTIN..."></textarea>
         </div>
 
-        <!-- Items Table -->
         <table>
             <thead>
                 <tr>
                     <th style="width: 40px;">#</th>
-                    <th>Item Name</th>
+                    <th>Item Name (Stock)</th>
                     <th style="width: 100px;">Barcode</th>
                     <th style="width: 80px;">HSN</th>
                     <th style="width: 60px;">Qty</th>
@@ -101,7 +96,6 @@
                 </tr>
             </thead>
             <tbody id="itemRows">
-                <!-- Dynamic rows will go here -->
             </tbody>
         </table>
 
@@ -109,10 +103,9 @@
             <button class="btn" onclick="addItemRow()">+ Add Item Row</button>
         </div>
 
-        <!-- Totals & Tax Summary -->
         <div style="display: flex; justify-content: space-between; margin-top: 20px;">
             <div style="width: 55%;">
-                <h4>Tax Summary (HSWise):</h4>
+                <h4>Tax Summary (HSN-wise):</h4>
                 <table>
                     <thead>
                         <tr>
@@ -158,7 +151,6 @@
             </div>
         </div>
 
-        <!-- Signatures -->
         <div style="display: flex; justify-content: space-between; margin-top: 50px;">
             <div>Receiver's Signature</div>
             <div style="text-align: right;">
@@ -168,7 +160,6 @@
         </div>
     </div>
 
-    <!-- Action Buttons -->
     <div class="no-print" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px; display: flex; gap: 10px;">
         <button class="btn btn-success" onclick="saveAndPrintInvoice()">Save & Print Invoice</button>
         <button class="btn" onclick="openThermalReceipt()">POS Thermal Print</button>
@@ -178,12 +169,10 @@
         <button class="btn btn-danger" onclick="resetInvoiceForm()">Reset Form</button>
     </div>
 
-    <!-- Management Sections (Firms, Customers, Inventory, History, Ledger) -->
     <hr class="no-print" style="margin: 40px 0;">
     <div class="no-print">
         <h2>Management Portal</h2>
         
-        <!-- Add Firm -->
         <h3>1. Manage Firms / Companies</h3>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
             <input type="text" id="busName" class="input-field" placeholder="Firm Name">
@@ -198,7 +187,6 @@
             <tbody id="companyTableBody"></tbody>
         </table>
 
-        <!-- Add Customer -->
         <h3 style="margin-top: 30px;">2. Manage Customers</h3>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
             <input type="text" id="newCustName" class="input-field" placeholder="Customer Name">
@@ -212,7 +200,6 @@
             <tbody id="customerTableBody"></tbody>
         </table>
 
-        <!-- Add Product -->
         <h3 style="margin-top: 30px;">3. Manage Inventory / Stock</h3>
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
             <input type="text" id="prodName" class="input-field" placeholder="Product Name">
@@ -234,7 +221,6 @@
             <tbody id="inventoryTableBody"></tbody>
         </table>
 
-        <!-- Invoice History & Reports -->
         <h3 style="margin-top: 30px;">4. Invoice History & Reports</h3>
         <div>
             <p>Total Sales: <strong id="repTotalSales">₹0.00</strong> | Received: <strong id="repTotalReceived">₹0.00</strong> | Pending: <strong id="repTotalPending" style="color: red;">₹0.00</strong></p>
@@ -258,7 +244,6 @@
     </div>
 </div>
 
-<!-- Thermal Receipt Modal -->
 <div id="thermalReceiptModal" class="no-print" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
     <div style="background:white; padding:20px; border-radius:8px; width:350px;">
         <h3>POS Thermal Receipt</h3>
@@ -269,7 +254,6 @@
 </div>
 
 <script>
-    // Global Database Arrays
     let companies = JSON.parse(localStorage.getItem('pos_companies')) || [
         { name: "Golden Star Furniture & Interior", prefix: "GSF", address: "Srinagar, J&K", phone: "9876543210", gstin: "01AAAAA0000A1Z5", bankName: "HDFC Bank", accNo: "1234567890", ifsc: "HDFC0001234" }
     ];
@@ -349,7 +333,7 @@
         let idx = document.getElementById('invoiceCustDropdown').value;
         if(idx !== "") {
             let cust = customers[idx];
-            let text = `${cust.name}\n${cust.address}\nPhone: ${cust.phone || 'N/A'}\nGSTIN: ${cust.gstin || 'Unregistered'}\nState: ${cust.state || '01-Jammu & Kashmir'}`;
+            let text = `${cust.name}\n${cust.address}\nPhone: ${cust.phone || 'N/A'}\nGSTIN: ${cust.gstin || 'Unregistered'}`;
             document.getElementById('manualCustDetails').value = text;
         }
     }
@@ -362,15 +346,14 @@
             let prod = inventory.find(p => p.barcode === code || p.name.toLowerCase().includes(code.toLowerCase()));
             if(prod) {
                 addItemRowWithProduct(prod);
-              
-    }
                 document.getElementById('globalBarcodeScan').value = '';
             } else {
                 alert("Product not found with barcode / search term!");
             }
         }
     }
-function addItemRowWithProduct(prod) {
+
+    function addItemRowWithProduct(prod) {
         let tbody = document.getElementById('itemRows');
         let rowCount = tbody.rows.length + 1;
         let tr = document.createElement('tr');
@@ -380,48 +363,6 @@ function addItemRowWithProduct(prod) {
             let selected = (prod && prod.name === item.name) ? 'selected' : '';
             optionsHtml += `<option value="${item.name}" ${selected}>${item.name} (Stock: ${item.stock})</option>`;
         });
-
-        tr.innerHTML = `
-            <td>${rowCount}</td>
-            <td class="left">
-                <select class="input-field row-name" onchange="onItemDropdownSelect(this)" style="margin-bottom:0;">
-                    ${optionsHtml}
-                </select>
-            </td>
-            <td><input type="text" class="input-field row-barcode" value="${prod ? prod.barcode || '' : ''}" style="margin-bottom:0;"></td>
-            <td><input type="text" class="input-field row-hsn" value="${prod ? prod.hsn || '' : ''}" style="margin-bottom:0;"></td>
-            <td><input type="number" class="input-field row-qty" value="1" min="1" oninput="calculateTotals()" style="margin-bottom:0;"></td>
-            <td><input type="text" class="input-field row-unit" value="Nos" style="margin-bottom:0;"></td>
-            <td><input type="number" class="input-field row-price" value="${prod ? prod.price : 0}" step="0.01" oninput="calculateTotals()" style="margin-bottom:0;"></td>
-            <td>
-                <select class="input-field row-gst" onchange="calculateTotals()" style="margin-bottom:0;">
-                    <option value="18" ${prod && prod.gst==18?'selected':''}>18%</option>
-                    <option value="12" ${prod && prod.gst==12?'selected':''}>12%</option>
-                    <option value="28" ${prod && prod.gst==28?'selected':''}>28%</option>
-                    <option value="5" ${prod && prod.gst==5?'selected':''}>5%</option>
-                    <option value="0" ${prod && prod.gst==0?'selected':''}>0%</option>
-                </select>
-            </td>
-            <td class="row-gst-amt right">0.00</td>
-            <td class="row-total right">0.00</td>
-            <td class="no-print"><button class="btn-danger" onclick="this.closest('tr').remove(); calculateTotals();">X</button></td>
-        `;
-        tbody.appendChild(tr);
-        calculateTotals();
-    }
-
-    function onItemDropdownSelect(selectElem) {
-        let selectedName = selectElem.value;
-        let matched = inventory.find(i => i.name === selectedName);
-        if(!matched) return;
-
-        let tr = selectElem.closest('tr');
-        tr.querySelector('.row-barcode').value = matched.barcode || '';
-        tr.querySelector('.row-hsn').value = matched.hsn || '';
-        tr.querySelector('.row-price').value = matched.price;
-        tr.querySelector('.row-gst').value = matched.gst;
-        calculateTotals();
-    }
 
         tr.innerHTML = `
             <td>${rowCount}</td>
@@ -521,7 +462,6 @@ function addItemRowWithProduct(prod) {
         balElem.innerText = balance.toFixed(2);
         balElem.style.color = balance > 0 ? '#b30000' : 'green';
 
-        // Render Tax Summary Rows
         let taxBody = document.getElementById('taxSummaryRows');
         taxBody.innerHTML = '';
         for(let hsn in taxMap) {
@@ -664,9 +604,7 @@ function addItemRowWithProduct(prod) {
         document.getElementById('thermalReceiptModal').style.display = 'flex';
     }
 
-    function downloadOrSharePDF() {
-        window.print();
-    }
+    function downloadOrSharePDF() { window.print(); }
 
     function shareOnWhatsApp() {
         let custDetails = document.getElementById('manualCustDetails').value;
@@ -684,7 +622,6 @@ function addItemRowWithProduct(prod) {
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 
-    // Management Modules & Tables Render Functions
     function renderCompanyTable() {
         let tbody = document.getElementById('companyTableBody');
         tbody.innerHTML = '';
@@ -827,8 +764,6 @@ function addItemRowWithProduct(prod) {
         let totalSales = 0;
         let totalReceived = 0;
         let totalPending = 0;
-        let dayBookBody = document.getElementById('dayBookTableBody');
-        if(dayBookBody) dayBookBody.innerHTML = '';
 
         invoices.forEach(inv => {
             totalSales += inv.grandTotal;
@@ -840,7 +775,6 @@ function addItemRowWithProduct(prod) {
         document.getElementById('repTotalReceived').innerText = `₹${totalReceived.toFixed(2)}`;
         document.getElementById('repTotalPending').innerText = `₹${totalPending.toFixed(2)}`;
 
-        // Aggregate GSTR-1 HSN Summary
         let gstrBody = document.getElementById('gstr1TableBody');
         gstrBody.innerHTML = '';
         let dummyTaxable = totalSales / 1.18;
