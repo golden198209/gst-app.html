@@ -6,16 +6,17 @@
     <title>POS & Billing System</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f7f6; color: #333; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1, h2, h3 { color: #2c3e50; }
         .input-field { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn { background: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .tbl-input { width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box; font-size: 13px; margin: 0; }
+        .btn { background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn:hover { background: #2980b9; }
-        .btn-danger { background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
         .btn-danger:hover { background: #c0392b; }
-        .btn-success { background: #2ecc71; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-success { background: #2ecc71; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; vertical-align: middle; }
         th { background-color: #f2f2f2; }
         .right { text-align: right; }
         .left { text-align: left; }
@@ -24,7 +25,7 @@
         @media print {
             body { background: white; padding: 0; }
             .no-print { display: none !important; }
-            .container { box-shadow: none; padding: 0; }
+            .container { box-shadow: none; padding: 0; width: 100%; }
         }
     </style>
 </head>
@@ -33,7 +34,6 @@
 <div class="container">
     <div class="no-print">
         <h2>POS & Invoice Management System</h2>
-        
         <div style="display: flex; gap: 15px; margin-bottom: 15px;">
             <div style="flex: 1;">
                 <label><strong>Select Firm / Company:</strong></label>
@@ -54,8 +54,8 @@
             </div>
             <div style="text-align: right;">
                 <h3 style="margin: 0 0 5px 0;">TAX INVOICE</h3>
-                <div>Invoice No: <input type="text" id="invNumber" style="width: 80px; text-align: right;" readonly></div>
-                <div>Date: <input type="date" id="invDate" style="width: 130px;"></div>
+                <div>Invoice No: <input type="text" id="invNumber" style="width: 80px; text-align: right; padding: 2px;" readonly></div>
+                <div style="margin-top: 5px;">Date: <input type="date" id="invDate" style="width: 130px; padding: 2px;"></div>
             </div>
         </div>
 
@@ -66,7 +66,7 @@
             </div>
             <div style="width: 48%;">
                 <label>Price Mode:</label>
-                <div>
+                <div style="margin-top: 8px;">
                     <label><input type="radio" name="priceMode" value="exclusive" checked onchange="calculateTotals()"> Exclusive of Tax</label>
                     &nbsp;&nbsp;
                     <label><input type="radio" name="priceMode" value="inclusive" onchange="calculateTotals()"> Inclusive of Tax</label>
@@ -82,17 +82,17 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 40px;">#</th>
+                    <th style="width: 35px;">#</th>
                     <th>Item Name (Stock)</th>
-                    <th style="width: 100px;">Barcode</th>
-                    <th style="width: 80px;">HSN</th>
-                    <th style="width: 60px;">Qty</th>
-                    <th style="width: 60px;">Unit</th>
-                    <th style="width: 90px;" class="right">Price</th>
+                    <th style="width: 90px;">Barcode</th>
+                    <th style="width: 70px;">HSN</th>
+                    <th style="width: 55px;">Qty</th>
+                    <th style="width: 55px;">Unit</th>
+                    <th style="width: 80px;" class="right">Price</th>
                     <th style="width: 70px;">GST %</th>
-                    <th style="width: 80px;" class="right">GST Amt</th>
-                    <th style="width: 100px;" class="right">Total</th>
-                    <th style="width: 40px;" class="no-print">Act</th>
+                    <th style="width: 75px;" class="right">GST Amt</th>
+                    <th style="width: 90px;" class="right">Total</th>
+                    <th style="width: 35px;" class="no-print">Act</th>
                 </tr>
             </thead>
             <tbody id="itemRows">
@@ -137,9 +137,9 @@
                     <span>Grand Total:</span>
                     <span>₹ <span id="grandTotal">0.00</span></span>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;" class="no-print">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;" class="no-print">
                     <span>Amount Received:</span>
-                    <input type="number" id="amtReceived" class="input-field" value="0" style="width: 120px; margin-bottom: 0; text-align: right;" oninput="calculateTotals()">
+                    <input type="number" id="amtReceived" class="input-field" value="0" style="width: 110px; margin-bottom: 0; text-align: right;" oninput="calculateTotals()">
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold;">
                     <span>Balance Due:</span>
@@ -160,7 +160,7 @@
         </div>
     </div>
 
-    <div class="no-print" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px; display: flex; gap: 10px;">
+    <div class="no-print" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
         <button class="btn btn-success" onclick="saveAndPrintInvoice()">Save & Print Invoice</button>
         <button class="btn" onclick="openThermalReceipt()">POS Thermal Print</button>
         <button class="btn" onclick="downloadOrSharePDF()">Download / Print PDF</button>
@@ -358,7 +358,7 @@
         let rowCount = tbody.rows.length + 1;
         let tr = document.createElement('tr');
         
-        let optionsHtml = `<option value="">-- Select Product from Stock --</option>`;
+        let optionsHtml = `<option value="">-- Select Product --</option>`;
         inventory.forEach(item => {
             let selected = (prod && prod.name === item.name) ? 'selected' : '';
             optionsHtml += `<option value="${item.name}" ${selected}>${item.name} (Stock: ${item.stock})</option>`;
@@ -367,17 +367,17 @@
         tr.innerHTML = `
             <td>${rowCount}</td>
             <td class="left">
-                <select class="input-field row-name" onchange="onItemDropdownSelect(this)" style="margin-bottom:0;">
+                <select class="tbl-input row-name" onchange="onItemDropdownSelect(this)">
                     ${optionsHtml}
                 </select>
             </td>
-            <td><input type="text" class="input-field row-barcode" value="${prod ? prod.barcode || '' : ''}" style="margin-bottom:0;"></td>
-            <td><input type="text" class="input-field row-hsn" value="${prod ? prod.hsn || '' : ''}" style="margin-bottom:0;"></td>
-            <td><input type="number" class="input-field row-qty" value="1" min="1" oninput="calculateTotals()" style="margin-bottom:0;"></td>
-            <td><input type="text" class="input-field row-unit" value="Nos" style="margin-bottom:0;"></td>
-            <td><input type="number" class="input-field row-price" value="${prod ? prod.price : 0}" step="0.01" oninput="calculateTotals()" style="margin-bottom:0;"></td>
+            <td><input type="text" class="tbl-input row-barcode" value="${prod ? prod.barcode || '' : ''}"></td>
+            <td><input type="text" class="tbl-input row-hsn" value="${prod ? prod.hsn || '' : ''}"></td>
+            <td><input type="number" class="tbl-input row-qty" value="1" min="1" oninput="calculateTotals()"></td>
+            <td><input type="text" class="tbl-input row-unit" value="Nos"></td>
+            <td><input type="number" class="tbl-input row-price" value="${prod ? prod.price : 0}" step="0.01" oninput="calculateTotals()"></td>
             <td>
-                <select class="input-field row-gst" onchange="calculateTotals()" style="margin-bottom:0;">
+                <select class="tbl-input row-gst" onchange="calculateTotals()">
                     <option value="18" ${prod && prod.gst==18?'selected':''}>18%</option>
                     <option value="12" ${prod && prod.gst==12?'selected':''}>12%</option>
                     <option value="28" ${prod && prod.gst==28?'selected':''}>28%</option>
